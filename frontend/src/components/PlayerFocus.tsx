@@ -41,6 +41,10 @@ export function PlayerFocus({ meta, playerId, plugins, narrations }: Props) {
           <Metric label="Shots · xG" value={`${stats.shots} · ${stats.xg.toFixed(2)}`} />
           <Metric label="Strong foot" value={player.preferred_foot === "left" ? "Left" : "Right"} />
           <Metric
+            label="Sprint drop"
+            value={stats.fatigue_pct === null ? "measuring…" : `${stats.fatigue_pct}% vs fresh`}
+          />
+          <Metric
             label="Weak foot use"
             value={`${stats.weak_foot_pct}%${stats.weak_foot_success_pct !== null ? ` · ${stats.weak_foot_success_pct}% ok` : ""}`}
           />

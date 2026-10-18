@@ -23,6 +23,7 @@ CUE_RULES: dict[str, tuple[str, str, float, int]] = {
     "momentum_swing": ("side_panel", "momentum", 6.0, 55),
     "regime_chaos": ("side_panel", "regime", 5.0, 45),
     "regime_control": ("side_panel", "regime", 5.0, 45),
+    "fatigue": ("side_panel", "fatigue", 6.0, 40),
 }
 
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Ball3D } from "./components/Ball3D";
 import { CommentaryFeed } from "./components/CommentaryFeed";
 import { Controls } from "./components/Controls";
+import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
 import { OverlayLayer } from "./components/OverlayLayer";
 import { Pitch2D } from "./components/Pitch2D";
 import { PlayerFocus } from "./components/PlayerFocus";
@@ -16,12 +17,17 @@ export default function App() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [persona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
   const [view, setView] = useState<"2d" | "3d" | "both">("both");
-  const { state, send, clearNarrations } = useLiveMatch(matchId, DEFAULT_PERSONA, 4);
+  const [matches, setMatches] = useState<MatchSummary[]>([]);
+  // The current persona is read when (re)connecting, so switching match keeps the viewer's settings.
+  const { state, send, clearNarrations } = useLiveMatch(matchId, persona, 4);
 
   useEffect(() => {
     fetch("/api/matches")
       .then((r) => r.json())
-      .then((list) => setMatchId(list[0]?.match_id ?? null));
+      .then((list: MatchSummary[]) => {
+        setMatches(list);
+        setMatchId(list[0]?.match_id ?? null);
+      });
   }, []);
 
   const updatePersona = (patch: Partial<Persona>) => {
@@ -61,6 +67,15 @@ export default function App() {
             </button>
           ))}
         </div>
+        <MatchPicker
+          matches={matches}
+          current={matchId}
+          onSelect={setMatchId}
+          onCreated={(list, id) => {
+            setMatches(list);
+            setMatchId(id);
+          }}
+        />
       </header>
 
       <Controls

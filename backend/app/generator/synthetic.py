@@ -59,6 +59,7 @@ class SimPlayer:
     pos: np.ndarray
     vel: np.ndarray = field(default_factory=lambda: np.zeros(2))
     pace: float = 1.0  # individual top-speed multiplier
+    fatigue: float = 0.0  # 0 fresh .. 1 exhausted; costs up to 35% of top speed
     tackle_cooldown_until: float = 0.0
     # Gait state for foot tracking.
     heading: np.ndarray = field(default_factory=lambda: np.array([1.0, 0.0]))
@@ -238,7 +239,7 @@ class MatchSimulator:
     def _move(self, p: SimPlayer, target: np.ndarray, speed: float) -> None:
         delta = target - p.pos
         dist = float(np.linalg.norm(delta))
-        speed *= p.pace
+        speed *= p.pace * (1.0 - 0.35 * p.fatigue)
         desired = np.zeros(2) if dist < 0.2 else delta / dist * min(speed, dist / self.dt)
         p.vel = p.vel + (desired - p.vel) * min(1.0, 4.0 * self.dt)
         p.pos = np.clip(p.pos + p.vel * self.dt, [0.5, 0.5], [L - 0.5, W - 0.5])
@@ -702,7 +703,15 @@ class MatchSimulator:
             out += [round(float(xy[0]), 2), round(float(xy[1]), 2), round(float(z), 2)]
         return (p.id, *out)  # type: ignore[return-value]
 
+    def _tire(self) -> None:
+        """Fatigue builds with effort (speed squared) plus a small baseline drain."""
+        for p in self.players:
+            sp2 = float(p.vel[0] ** 2 + p.vel[1] ** 2)
+            rate = (3e-6 * sp2 + 1e-5) * (0.4 if p.meta.role == "GK" else 1.0)
+            p.fatigue = min(1.0, p.fatigue + rate * self.dt)
+
     def _record(self) -> None:
+        self._tire()
         self.frames.append(
             Frame(
                 f=self.frame_idx,
@@ -726,6 +735,8 @@ class MatchSimulator:
                 self._resolve_pending("out")
                 self.pending_shot = None
                 self._emit("half_time", score=dict(self.score))
+                for p in self.players:
+                    p.fatigue *= 0.7  # half-time recovery
                 self._kickoff("away")
             self._update_players()
             if self.owner is not None:

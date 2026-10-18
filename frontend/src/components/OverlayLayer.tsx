@@ -77,6 +77,14 @@ function CueBody({ cue, meta }: { cue: OverlayCue; meta: MatchMeta }) {
           <div className="cue-sub">{d.possession_changes_per_min} turnovers/min</div>
         </>
       );
+    case "fatigue":
+      return (
+        <>
+          <div className="cue-kicker">FATIGUE WATCH</div>
+          <div className="cue-title">{cue.player}</div>
+          <div className="cue-sub">sprint speed down {d.speed_drop_pct}%</div>
+        </>
+      );
     default:
       return <div className="cue-title">{cue.template}</div>;
   }

@@ -98,6 +98,7 @@ export interface PlayerStats {
   left_foot: number;
   right_foot: number;
   headers: number;
+  fatigue_pct: number | null;
   weak_foot_pct: number;
   weak_foot_success_pct: number | null;
 }

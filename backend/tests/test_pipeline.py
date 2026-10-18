@@ -59,6 +59,16 @@ def test_physical_metrics_ignore_restart_teleports(match):
     assert max(p["distance_m"] for p in players) < 6 * 60 * 9  # under 9 m/s on average
 
 
+def test_fatigue_compares_real_sprints_only(match):
+    stats = LivePipeline(match).plugins["stats"]
+    fresh = {m: 30.0 for m in range(0, 20)}
+    stats._minute_top["tired"] = {**fresh, **{m: 26.0 for m in range(46, 60)}}
+    stats._minute_top["idle"] = {**fresh, **{m: 12.0 for m in range(46, 60)}}  # no sprints lately
+    assert round(stats._fatigue_pct("tired", 60 * 60.0), 1) == 13.3
+    assert stats._fatigue_pct("idle", 60 * 60.0) is None
+    assert stats._fatigue_pct("tired", 30 * 60.0) is None  # too early to judge
+
+
 def test_forecast_calls_on_target_shots_before_they_arrive(long_match):
     insights, _ = run(LivePipeline(long_match), long_match)
     calls = [i for i in insights if i.kind == "forecast_on_target"]

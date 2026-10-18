@@ -26,8 +26,10 @@ cd backend && uv venv --python 3.12 .venv && uv pip install --python .venv/bin/p
 cd backend && .venv/bin/uvicorn app.main:app --port 8000
 ```
 
-On first start it generates a 20-minute match (seed 7), about 6 s, and caches it in `backend/data/`.
-`MATCH_SEED` / `MATCH_MINUTES` env vars change the default. `POST /api/matches {"seed": 11, "minutes": 90}` makes another.
+On first start it generates a 20-minute match (seed 2, an eventful 2-2), about 5 s, and caches it in
+`backend/data/`. `MATCH_SEED` / `MATCH_MINUTES` env vars change the default. The **New match** button in the
+UI (or `POST /api/matches {"seed": 11, "minutes": 90}`) generates another; a 90-minute match takes about 25 s.
+Players tire over a match (sprint speed drops late on); the stats plugin detects it from tracking alone.
 
 Frontend (Node 20+):
 

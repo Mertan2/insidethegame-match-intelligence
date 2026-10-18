@@ -21,7 +21,7 @@ from .plugins import describe_plugins
 from .replay import ReplayEngine
 from .store import MatchStore
 
-DEFAULT_SEED = int(os.getenv("MATCH_SEED", "7"))
+DEFAULT_SEED = int(os.getenv("MATCH_SEED", "2"))  # seed 2: an eventful 2-2 with headed chances, good for demos
 DEFAULT_MINUTES = int(os.getenv("MATCH_MINUTES", "20"))
 
 store: MatchStore | None = None
