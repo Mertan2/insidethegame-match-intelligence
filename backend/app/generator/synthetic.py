@@ -139,6 +139,7 @@ class MatchSimulator:
         self.kicker: SimPlayer | None = None
         self.kick_time = -10.0
         self.kick_origin = np.array([L / 2, W / 2])
+        self._path_cache: tuple[int, list] | None = None
         self.intended_receiver: SimPlayer | None = None
         self.pending_pass: dict | None = None
         self.pending_shot: dict | None = None
@@ -244,7 +245,11 @@ class MatchSimulator:
 
     def _ball_target_for(self, p: SimPlayer) -> np.ndarray:
         """Earliest point on the predicted ball path the player can reach (ball is free)."""
-        path = physics.simulate(self.ball_pos, self.ball_vel, duration=3.0, dt=0.05, spin=self.ball_spin)
+        # The ball's path is the same for every chaser this frame: simulate it once.
+        if self._path_cache is None or self._path_cache[0] != self.frame_idx:
+            path = physics.simulate(self.ball_pos, self.ball_vel, duration=3.0, dt=0.05, spin=self.ball_spin)
+            self._path_cache = (self.frame_idx, path)
+        path = self._path_cache[1]
         attacking_cross = (
             p is self.intended_receiver
             and self.pending_pass is not None

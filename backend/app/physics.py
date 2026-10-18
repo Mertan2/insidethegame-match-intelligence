@@ -31,32 +31,39 @@ def is_airborne(pos: np.ndarray, vel: np.ndarray) -> bool:
 
 
 def step(pos: np.ndarray, vel: np.ndarray, dt: float, spin: np.ndarray | None = None):
-    """Advance ball state by dt. Returns (pos, vel) as new arrays."""
-    p = pos.astype(float).copy()
-    v = vel.astype(float).copy()
-    if is_airborne(p, v):
-        speed = float(np.linalg.norm(v))
-        acc = np.array([0.0, 0.0, -G]) - DRAG_K * speed * v
+    """Advance ball state by dt. Returns (pos, vel) as new arrays.
+
+    Scalar math on purpose: numpy call overhead dominates for 3-element vectors,
+    and this runs hundreds of thousands of times per generated match.
+    """
+    px, py, pz = float(pos[0]), float(pos[1]), float(pos[2])
+    vx, vy, vz = float(vel[0]), float(vel[1]), float(vel[2])
+    if pz > 0.02 or vz > 0.05:  # airborne
+        k = DRAG_K * math.sqrt(vx * vx + vy * vy + vz * vz)
+        ax, ay, az = -k * vx, -k * vy, -G - k * vz
         if spin is not None:
-            acc += MAGNUS_K * np.cross(spin, v)
-        v = v + acc * dt
-        p = p + v * dt
-        if p[2] <= 0.0:
-            p[2] = 0.0
-            if v[2] < -1.0:
-                v[2] = -v[2] * BOUNCE_RESTITUTION
-                v[:2] *= BOUNCE_FRICTION
+            sx, sy, sz = float(spin[0]), float(spin[1]), float(spin[2])
+            ax += MAGNUS_K * (sy * vz - sz * vy)
+            ay += MAGNUS_K * (sz * vx - sx * vz)
+            az += MAGNUS_K * (sx * vy - sy * vx)
+        vx, vy, vz = vx + ax * dt, vy + ay * dt, vz + az * dt
+        px, py, pz = px + vx * dt, py + vy * dt, pz + vz * dt
+        if pz <= 0.0:
+            pz = 0.0
+            if vz < -1.0:
+                vz = -vz * BOUNCE_RESTITUTION
+                vx *= BOUNCE_FRICTION
+                vy *= BOUNCE_FRICTION
             else:
-                v[2] = 0.0
+                vz = 0.0
     else:
-        p[2] = 0.0
-        v[2] = 0.0
-        hs = float(np.linalg.norm(v[:2]))
+        pz = vz = 0.0
+        hs = math.sqrt(vx * vx + vy * vy)
         if hs > 0.0:
-            new_hs = max(0.0, hs - ROLL_DECEL * dt)
-            v[:2] *= new_hs / hs
-        p = p + v * dt
-    return p, v
+            ratio = max(0.0, hs - ROLL_DECEL * dt) / hs
+            vx, vy = vx * ratio, vy * ratio
+        px, py = px + vx * dt, py + vy * dt
+    return np.array([px, py, pz]), np.array([vx, vy, vz])
 
 
 def simulate(
@@ -76,9 +83,9 @@ def simulate(
         p, v = step(p, v, dt, spin)
         t += dt
         if t + 1e-9 >= next_sample:
-            out.append((round(t, 3), p.copy()))
+            out.append((round(t, 3), p))  # step() returns fresh arrays, no copy needed
             next_sample += sample_every
-        if not is_airborne(p, v) and np.linalg.norm(v[:2]) < 0.05:
+        if not is_airborne(p, v) and math.hypot(v[0], v[1]) < 0.05:
             break
     return out
 
