@@ -1,7 +1,8 @@
-"""Generated matches, cached as JSON under backend/data/ so restarts are instant."""
+"""Generated matches, cached as gzipped JSON under backend/data/ so restarts are instant."""
 
 from __future__ import annotations
 
+import gzip
 from pathlib import Path
 
 from .generator import generate_match
@@ -15,9 +16,12 @@ class MatchStore:
         self.data_dir = data_dir
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self._matches: dict[str, Match] = {}
-        for path in sorted(self.data_dir.glob("*.json")):
-            match = Match.model_validate_json(path.read_text())
+        for path in sorted(self.data_dir.glob("*.json.gz")):
+            match = Match.model_validate_json(gzip.decompress(path.read_bytes()))
             self._matches[match.meta.match_id] = match
+        for path in sorted(self.data_dir.glob("*.json")):  # older uncompressed caches
+            match = Match.model_validate_json(path.read_text())
+            self._matches.setdefault(match.meta.match_id, match)
 
     def list(self) -> list[dict]:
         return [
@@ -40,6 +44,7 @@ class MatchStore:
         if match_id in self._matches:
             return self._matches[match_id]
         match = generate_match(seed=seed, minutes=minutes, match_id=match_id)
-        (self.data_dir / f"{match_id}.json").write_text(match.model_dump_json())
+        payload = gzip.compress(match.model_dump_json().encode(), compresslevel=6)
+        (self.data_dir / f"{match_id}.json.gz").write_bytes(payload)
         self._matches[match_id] = match
         return match
