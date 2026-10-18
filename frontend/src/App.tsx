@@ -4,6 +4,7 @@ import { AskPanel } from "./components/AskPanel";
 import { CommentaryFeed } from "./components/CommentaryFeed";
 import { Controls } from "./components/Controls";
 import { DataView } from "./components/DataView";
+import { Kickoff } from "./components/Kickoff";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
 import { OverlayLayer } from "./components/OverlayLayer";
 import { Pitch2D } from "./components/Pitch2D";
@@ -23,9 +24,11 @@ export default function App() {
   const [model, setModel] = useState<string | null>(null);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
+  const [kickedOff, setKickedOff] = useState(false);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   // The current persona is read when (re)connecting, so switching match keeps the viewer's settings.
-  const { state, send, ask, clearNarrations } = useLiveMatch(matchId, persona, 4);
+  // The first match waits at 0:00 for the kick-off click (browsers only allow sound after a click).
+  const { state, send, ask, clearNarrations } = useLiveMatch(matchId, persona, 2, !kickedOff);
 
   useEffect(() => {
     fetch("/api/health")
@@ -73,6 +76,20 @@ export default function App() {
 
   return (
     <div className="app">
+      {!kickedOff && (
+        <Kickoff
+          meta={meta}
+          persona={persona}
+          voiceAvailable={voiceAvailable}
+          onLanguage={(language) => updatePersona({ language })}
+          onMode={(mode) => updatePersona({ mode })}
+          onKickoff={() => {
+            setVoiceOn(voiceAvailable);
+            setKickedOff(true);
+            send({ type: "control", action: "play" });
+          }}
+        />
+      )}
       <header>
         <div className="brand">Inside the Game · Match Intelligence</div>
         <div className="scoreboard">
@@ -93,7 +110,7 @@ export default function App() {
               onClick={() => setVoiceOn((v) => !v)}
               title="Spoken AI commentary (Azure AI Speech neural voice, in your language)"
             >
-              {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔈 Voice commentary"}
+              {voiceOn ? (speaking ? "🔊 Commentating…" : "🔊 Commentary on") : "🔇 Commentary muted"}
             </button>
           )}
         </div>

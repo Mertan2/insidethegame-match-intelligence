@@ -54,7 +54,7 @@ const INITIAL: LiveState = {
  * Besides the latest state it keeps per-second time series for the live charts,
  * feed throughput, and per-player speed from consecutive tracking frames.
  */
-export function useLiveMatch(matchId: string | null, initialPersona: Persona, initialSpeed: number) {
+export function useLiveMatch(matchId: string | null, initialPersona: Persona, initialSpeed: number, startPaused = false) {
   const [state, setState] = useState<LiveState>(INITIAL);
   const live = useRef<LiveState>(INITIAL);
   const ws = useRef<WebSocket | null>(null);
@@ -62,10 +62,11 @@ export function useLiveMatch(matchId: string | null, initialPersona: Persona, in
 
   useEffect(() => {
     if (!matchId) return;
-    live.current = { ...INITIAL, speed: initialSpeed };
+    live.current = { ...INITIAL, speed: initialSpeed, paused: startPaused };
     const params = new URLSearchParams({ speed: String(initialSpeed), mode: initialPersona.mode, lang: initialPersona.language });
     if (initialPersona.favorite_team) params.set("favorite_team", initialPersona.favorite_team);
     if (initialPersona.favorite_player) params.set("favorite_player", initialPersona.favorite_player);
+    if (startPaused) params.set("paused", "true");
     const proto = location.protocol === "https:" ? "wss" : "ws";
     const socket = new WebSocket(`${proto}://${location.host}/ws/live/${matchId}?${params}`);
     ws.current = socket;

@@ -173,6 +173,7 @@ async def live(
     favorite_team: str | None = None,
     favorite_player: str | None = None,
     plugins: str | None = Query(default=None, description="comma-separated plugin names"),
+    paused: bool = Query(default=False, description="start at kick-off, waiting for a play control"),
 ):
     await ws.accept()
     match = _store().get(match_id)
@@ -183,6 +184,7 @@ async def live(
 
     pipeline = LivePipeline(match, plugins.split(",") if plugins else None)
     engine = ReplayEngine(match, speed)
+    engine.paused = paused
     orchestrator = Orchestrator(match.meta, llm)
     ask_agent = AskAgent(llm)
     commentary = CommentaryScheduler()
