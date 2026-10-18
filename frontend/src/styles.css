@@ -199,3 +199,5 @@ td.lifted { color: #ffe65a; }
   .feed-tiles { grid-template-columns: repeat(3, 1fr); }
   .data-top, .data-tables { grid-template-columns: 1fr; }
 }
+.voice-toggle { border-radius: 14px; font-weight: 700; }
+.voice-toggle.on { background: linear-gradient(90deg, #ff9a5a, #ff5aa8); color: #0a0f17; border-color: transparent; }

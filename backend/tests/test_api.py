@@ -42,3 +42,12 @@ def test_live_websocket_streams_and_toggles_plugins(client):
                 assert len(msg["frame"]["players"]) == 22
         assert acked
         assert "speed_metrics" in seen_plugins
+
+
+def test_tts_reports_unconfigured_and_builds_ssml(client, monkeypatch):
+    from app.speech import Speech
+
+    monkeypatch.setattr(main, "speech", None)
+    assert client.post("/api/tts", json={"text": "Goal!"}).status_code == 503
+    ssml = Speech.ssml("Gol & <kurtarış>", "tr", excited=True)
+    assert "tr-TR-AhmetNeural" in ssml and "&amp; &lt;kurtarış&gt;" in ssml and "+14%" in ssml

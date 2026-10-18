@@ -15,6 +15,8 @@ What to try:
   An agent with function calling picks live-data tools (`get_match_state`, `get_player`, `get_team_stats`,
   `get_recent_events`, `get_top_players`, `get_ball_forecast`) and answers only from what they return. The tools
   it used are shown under each answer.
+- **🔈 Voice commentary:** turn it on in the header and the AI commentary and answers are spoken live by an
+  Azure AI Speech neural voice in the viewer's language (en, tr, es, fr, de, pt, ar), with more energy on goals.
 - **Live AI commentary:** every line is written by the agent team (labelled with the model), including
   "state of play" updates every two match minutes.
 

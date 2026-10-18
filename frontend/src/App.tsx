@@ -12,6 +12,7 @@ import { RecapPanel } from "./components/RecapPanel";
 import { StatsPanel } from "./components/StatsPanel";
 import type { Persona } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
+import { useVoice } from "./useVoice";
 
 const DEFAULT_PERSONA: Persona = { mode: "casual", language: "en", favorite_team: null, favorite_player: null };
 
@@ -20,6 +21,8 @@ export default function App() {
   const [persona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
   const [view, setView] = useState<"2d" | "3d" | "both" | "data">("both");
   const [model, setModel] = useState<string | null>(null);
+  const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   // The current persona is read when (re)connecting, so switching match keeps the viewer's settings.
   const { state, send, ask, clearNarrations } = useLiveMatch(matchId, persona, 4);
@@ -27,7 +30,10 @@ export default function App() {
   useEffect(() => {
     fetch("/api/health")
       .then((r) => r.json())
-      .then((h: { model: string | null }) => setModel(h.model));
+      .then((h: { model: string | null; voice: string | null }) => {
+        setModel(h.model);
+        setVoiceAvailable(Boolean(h.voice));
+      });
     fetch("/api/matches")
       .then((r) => r.json())
       .then((list: MatchSummary[]) => {
@@ -35,6 +41,19 @@ export default function App() {
         setMatchId(list[0]?.match_id ?? null);
       });
   }, []);
+
+  const { speak, speaking } = useVoice(voiceOn);
+  const latestNarration = state.narrations[0];
+  const latestAnswer = state.answers[0];
+  // Speak each new AI commentary line and each answer as it arrives.
+  useEffect(() => {
+    if (latestNarration) speak(latestNarration.text, latestNarration.language, latestNarration.kind);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestNarration]);
+  useEffect(() => {
+    if (latestAnswer) speak(latestAnswer.answer, persona.language, "answer");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestAnswer]);
 
   const updatePersona = (patch: Partial<Persona>) => {
     const next = { ...persona, ...patch };
@@ -68,6 +87,15 @@ export default function App() {
           <span className={`ai-badge ${model ? "on" : ""}`} title="Live commentary, explanations and answers are written by this model">
             {model ? `AI live · Azure OpenAI ${model}` : "AI offline · rule templates"}
           </span>
+          {voiceAvailable && (
+            <button
+              className={`voice-toggle ${voiceOn ? "on" : ""}`}
+              onClick={() => setVoiceOn((v) => !v)}
+              title="Spoken AI commentary (Azure AI Speech neural voice, in your language)"
+            >
+              {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔈 Voice commentary"}
+            </button>
+          )}
         </div>
         <div className="segmented">
           {(["2d", "3d", "both", "data"] as const).map((v) => (

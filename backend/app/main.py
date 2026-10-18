@@ -11,11 +11,13 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
+from .speech import VOICES, get_speech
 from .models import Match
 from .pipeline import LivePipeline
 from .plugins import describe_plugins
@@ -27,6 +29,7 @@ DEFAULT_MINUTES = int(os.getenv("MATCH_MINUTES", "20"))
 
 store: MatchStore | None = None
 llm = get_llm()
+speech = get_speech()
 
 
 @asynccontextmanager
@@ -65,7 +68,25 @@ class GenerateRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "llm": type(llm).__name__, "model": getattr(llm, "deployment", None)}
+    return {"ok": True, "llm": type(llm).__name__, "model": getattr(llm, "deployment", None),
+            "voice": "Azure AI Speech" if speech else None}
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=600)
+    lang: str = "en"
+    kind: str | None = None
+
+
+@app.post("/api/tts")
+async def tts(req: TTSRequest) -> Response:
+    """Spoken commentary: Azure AI Speech neural voice for the requested language, as MP3."""
+    if speech is None:
+        raise HTTPException(503, "Speech not configured")
+    if req.lang not in VOICES:
+        raise HTTPException(400, f"No voice for language {req.lang}")
+    audio = await speech.synthesize(req.text, req.lang, req.kind)
+    return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/matches")
