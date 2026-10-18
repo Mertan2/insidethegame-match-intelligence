@@ -17,6 +17,10 @@ What to try:
   it used are shown under each answer.
 - **🔈 Voice commentary:** turn it on in the header and the AI commentary and answers are spoken live by an
   Azure AI Speech neural voice in the viewer's language (en, tr, es, fr, de, pt, ar), with more energy on goals.
+- **Broadcast director:** watches every event and frame and briefs the narrator every few seconds: play-by-play
+  of what's on screen (who has the ball, where, the current passing move), fun facts as they happen (longest
+  move, fastest shot, braces, headers, weak-foot goals, saves, distance milestones) and running, half-time and
+  full-time recaps. Key moments always go first. In Analyst mode, each line shows the brief the narrator got.
 - **Live AI commentary:** every line is written by the agent team (labelled with the model), including
   "state of play" updates every two match minutes.
 

@@ -80,6 +80,20 @@ function CueBody({ cue, meta }: { cue: OverlayCue; meta: MatchMeta }) {
           <div className="cue-sub">{d.possession_changes_per_min} turnovers/min</div>
         </>
       );
+    case "fun_fact":
+      return (
+        <>
+          <div className="cue-kicker">DID YOU KNOW?</div>
+          <div className="cue-sub cue-fact">{String(d.fun_fact ?? "")}</div>
+        </>
+      );
+    case "recap":
+      return (
+        <>
+          <div className="cue-kicker">RECAP</div>
+          <div className="cue-sub cue-fact">{String(d.recap ?? "").split(";").slice(0, 3).join(" ·")}</div>
+        </>
+      );
     case "fatigue":
       return (
         <>

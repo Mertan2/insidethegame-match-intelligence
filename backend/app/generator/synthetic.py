@@ -751,6 +751,9 @@ class MatchSimulator:
             self._record()
             self.t += self.dt
             self.frame_idx += 1
+        # Stamp the final whistle on the last recorded frame so replays actually deliver it.
+        self.frame_idx = len(self.frames) - 1
+        self.t = self.frames[-1].t
         self._resolve_pending("out")
         self._emit("full_time", score=dict(self.score))
         for ev in self.events:

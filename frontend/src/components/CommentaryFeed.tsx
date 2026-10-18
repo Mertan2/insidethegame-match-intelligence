@@ -1,5 +1,13 @@
 import type { MatchMeta, Narration, Persona } from "../types";
 
+const KIND_LABEL: Record<string, string> = {
+  play_by_play: "▶ play-by-play",
+  fun_fact: "★ fun fact",
+  recap: "≡ recap",
+  half_time_recap: "≡ half-time recap",
+  full_time_recap: "≡ full-time recap",
+};
+
 interface Props {
   meta: MatchMeta;
   narrations: Narration[];
@@ -17,7 +25,7 @@ export function CommentaryFeed({ meta, narrations, persona, model }: Props) {
         <div key={`${n.t}-${i}`} className={`narration ${n.kind}`} style={{ borderColor: n.team ? meta.teams[n.team].color : "#556" }}>
           <div className="narration-head">
             <span className="clock">{n.clock}</span>
-            <span className="kind">{n.kind.replaceAll("_", " ")}</span>
+            <span className={`kind kind-${n.kind}`}>{KIND_LABEL[n.kind] ?? n.kind.replaceAll("_", " ")}</span>
             {n.trace.some((s) => s.path === "llm") ? (
               <span className="ai-badge on small" title="Written live by the agent team">AI · {model ?? "model"}</span>
             ) : (
@@ -30,6 +38,16 @@ export function CommentaryFeed({ meta, narrations, persona, model }: Props) {
             )}
           </div>
           <p>{n.text}</p>
+          {analyst && n.facts.length > 0 && (
+            <details className="brief">
+              <summary>What the director told the narrator</summary>
+              <ul>
+                {n.facts.map((f, j) => (
+                  <li key={j}>{f}</li>
+                ))}
+              </ul>
+            </details>
+          )}
           {analyst && n.why.length > 0 && (
             <ul className="why">
               {n.why.map((w, j) => (

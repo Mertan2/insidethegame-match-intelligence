@@ -201,3 +201,13 @@ td.lifted { color: #ffe65a; }
 }
 .voice-toggle { border-radius: 14px; font-weight: 700; }
 .voice-toggle.on { background: linear-gradient(90deg, #ff9a5a, #ff5aa8); color: #0a0f17; border-color: transparent; }
+.kind-play_by_play { color: #9be7ff !important; }
+.kind-fun_fact { color: #ffd166 !important; }
+.kind-recap, .kind-half_time_recap, .kind-full_time_recap { color: #b69cff !important; }
+.narration.fun_fact { background: #1f1a0c; }
+.narration.recap, .narration.half_time_recap, .narration.full_time_recap { background: #16122a; }
+.narration.play_by_play p { color: #cfe3f5; }
+.brief { margin: 4px 0; font-size: 12px; color: #b9c6d8; }
+.brief summary { cursor: pointer; color: var(--muted); }
+.brief ul { margin: 4px 0; padding-left: 18px; }
+.cue-fact { max-width: 420px; font-size: 14px; }

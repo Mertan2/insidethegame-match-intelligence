@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
+from .commentary import CommentaryScheduler
 from .speech import VOICES, get_speech
 from .models import Match
 from .pipeline import LivePipeline
@@ -184,6 +185,7 @@ async def live(
     engine = ReplayEngine(match, speed)
     orchestrator = Orchestrator(match.meta, llm)
     ask_agent = AskAgent(llm)
+    commentary = CommentaryScheduler()
     persona = Persona(mode=mode, language=lang, favorite_team=favorite_team, favorite_player=favorite_player)
     send_lock = asyncio.Lock()
     narration_tasks: set[asyncio.Task] = set()
@@ -266,10 +268,12 @@ async def live(
                         "insights": [i.model_dump() for i in result.insights],
                     }
                 )
-                if orchestrator.should_run(result.insights, frame.t):
-                    task = asyncio.create_task(
-                        narrate(frame.t, dict(frame.score), result.insights, pipeline.snapshots(), persona)
-                    )
+                if seeked:
+                    commentary.clear()
+                pick = commentary.offer(result.insights, frame.t)
+                if pick is not None:
+                    task = asyncio.create_task(narrate(frame.t, dict(frame.score), [pick], pipeline.snapshots(), persona))
+                    commentary.started(task)
                     narration_tasks.add(task)
                     task.add_done_callback(narration_tasks.discard)
             await send({"type": "end", "final_score": match.meta.final_score})

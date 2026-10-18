@@ -2,6 +2,7 @@
 
 from .ball_forecast import BallForecastPlugin
 from .base import Insight, MatchState, Plugin
+from .director import DirectorPlugin
 from .momentum import MomentumPlugin
 from .overlays import OverlaysPlugin
 from .pass_quality import PassQualityPlugin
@@ -10,7 +11,7 @@ from .stats import StatsPlugin
 
 PLUGIN_CLASSES: dict[str, type[Plugin]] = {
     cls.name: cls
-    for cls in (StatsPlugin, PassQualityPlugin, SpeedMetricsPlugin, BallForecastPlugin, MomentumPlugin, OverlaysPlugin)
+    for cls in (StatsPlugin, PassQualityPlugin, SpeedMetricsPlugin, BallForecastPlugin, MomentumPlugin, DirectorPlugin, OverlaysPlugin)
 }
 
 

@@ -13,10 +13,21 @@ SYSTEM = (
 )
 
 
+# Director briefs (play-by-play, fun facts, recaps) carry their own content; analysing them would only
+# slow live commentary down.
+BRIEF_KINDS = {"play_by_play", "fun_fact", "recap", "half_time_recap", "full_time_recap"}
+
+
 class TacticsAgent(Agent):
     name = "tactics"
     role = "Explains why the moment matters (momentum, control vs chaos, pressure)"
     instructions = SYSTEM
+
+    async def run(self, bb: Blackboard) -> str:
+        if (bb.moment or {}).get("kind") in BRIEF_KINDS:
+            bb.why = {"text": "", "factors": []}
+            return "skipped"
+        return await super().run(bb)
 
     def _factors(self, bb: Blackboard) -> list[str]:
         m = bb.moment or {}
