@@ -37,12 +37,21 @@ watching the same match).
 5. **Personalize.** Casual vs analyst modes, favourite club, a **player-focus mode** (camera, stats and
    commentary follow one player), and language selection.
 
+**See the data live.** A DATA tab shows the raw feed as it streams: throughput, xG race, possession,
+momentum and ball-speed charts building second by second, a 22-player tracking table with live speed and
+foot heights, and the event stream.
+
+**Ask the AI.** Viewers ask anything, in any language. An agent with Azure OpenAI function calling picks
+live-data tools (match state, team stats, a player, recent events, top players, ball forecast) and answers
+only from what they return; the tools it used are shown under each answer.
+
 **Agents (Microsoft Agent Framework).** A workflow of specialised agents shares one blackboard:
 - *Stats agent* (deterministic): picks the moment and the grounded facts, so the AI can't invent numbers.
 - *Tactics agent*: explains why it matters (momentum, chaos, pressure, forecast).
 - *Narrator agent*: writes the live commentary line.
 - *Persona agent*: adapts tone, focus and language to the viewer.
 - *Recap agent*: writes the automated full-time report.
+- *Ask agent*: answers viewer questions with function calling over live match data.
 
 Each agent has a timeout and a deterministic fallback, and every narration carries a trace of which agent
 ran how, so the live feed never goes silent if a model call fails.
