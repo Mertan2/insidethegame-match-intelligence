@@ -39,11 +39,22 @@ def test_feet_track_players_and_alternate(match):
 
 def test_kicks_record_foot_and_weak_foot_is_minority(match):
     kicks = [e for e in match.events if e.type in ("pass", "shot")]
-    assert all(e.data["body_part"] in ("left_foot", "right_foot") for e in kicks)
-    weak = sum(e.data["weak_foot"] for e in kicks) / len(kicks)
+    assert all(e.data["body_part"] in ("left_foot", "right_foot", "head") for e in kicks)
+    footed = [e for e in kicks if e.data["body_part"] != "head"]
+    weak = sum(e.data["weak_foot"] for e in footed) / len(footed)
     assert 0.08 < weak < 0.35
     lefties = sum(p.preferred_foot == "left" for p in match.meta.players)
     assert 0 < lefties < 22
+
+
+def test_headers_are_a_realistic_minority(long_match):
+    m = long_match
+    kicks = [e for e in m.events if e.type in ("pass", "shot")]
+    headers = [e for e in kicks if e.data["body_part"] == "head"]
+    assert 0.03 < len(headers) / len(kicks) < 0.25
+    assert any(e.type == "shot" for e in headers), "crosses should produce headed attempts"
+    assert all(not e.data["weak_foot"] for e in headers)
+    assert any(e.data.get("kind") == "cross" for e in kicks)
 
 
 def test_deterministic_for_seed():

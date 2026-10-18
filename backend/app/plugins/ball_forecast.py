@@ -44,6 +44,8 @@ class BallForecastPlugin(Plugin):
     def on_event(self, event: Event, state: MatchState) -> list[Insight]:
         if event.type == "shot":
             self._last_shot_event = event
+        if event.type in ("pass", "shot"):
+            self._pending.clear()  # a touch (e.g. a header) changes the flight; old forecasts can't be scored
         return []
 
     def drain_insights(self) -> list[Insight]:
@@ -55,6 +57,8 @@ class BallForecastPlugin(Plugin):
         shot = self._last_shot_event
         if shot is None or t - shot.t > 2.0 or self._flagged_shot_id == shot.id or not crossing["on_target"]:
             return
+        if crossing["in_s"] < 0.1:
+            return  # already at the line: that's not a forecast
         self._flagged_shot_id = shot.id
         self._insights.append(
             Insight(

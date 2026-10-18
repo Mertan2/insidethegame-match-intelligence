@@ -145,3 +145,4 @@ aside { grid-area: feed; min-height: 0; }
 .foot-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 4px; }
 .foot-left { background: #9b7bff; }
 .foot-right { background: #4fd1a5; }
+.foot-head { background: #ffd166; }

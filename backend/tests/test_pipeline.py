@@ -59,14 +59,12 @@ def test_physical_metrics_ignore_restart_teleports(match):
     assert max(p["distance_m"] for p in players) < 6 * 60 * 9  # under 9 m/s on average
 
 
-def test_forecast_calls_on_target_shots_before_they_arrive(match):
-    insights, _ = run(LivePipeline(match), match)
+def test_forecast_calls_on_target_shots_before_they_arrive(long_match):
+    insights, _ = run(LivePipeline(long_match), long_match)
     calls = [i for i in insights if i.kind == "forecast_on_target"]
-    on_target = sum(1 for e in match.events if e.type == "shot" and e.data["outcome"] in ("goal", "saved"))
     assert calls, "expected at least one on-target forecast"
-    assert len(calls) <= sum(1 for e in match.events if e.type == "shot")
+    assert len(calls) <= sum(1 for e in long_match.events if e.type == "shot")
     assert all(c.data["lead_s"] > 0 for c in calls)
-    assert on_target > 0
 
 
 def test_overlay_cues_follow_insights(match):

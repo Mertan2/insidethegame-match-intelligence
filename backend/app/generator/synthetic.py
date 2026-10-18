@@ -49,6 +49,7 @@ FORMATIONS = {
 }
 
 JOG, RUN, SPRINT = 3.5, 6.0, 7.8  # m/s
+HEADER_MIN_Z, HEADER_MAX_Z = 1.4, 2.6  # ball height an outfield player heads rather than controls
 
 
 @dataclass
@@ -244,6 +245,15 @@ class MatchSimulator:
     def _ball_target_for(self, p: SimPlayer) -> np.ndarray:
         """Earliest point on the predicted ball path the player can reach (ball is free)."""
         path = physics.simulate(self.ball_pos, self.ball_vel, duration=3.0, dt=0.05, spin=self.ball_spin)
+        attacking_cross = (
+            p is self.intended_receiver
+            and self.pending_pass is not None
+            and self.pending_pass["data"].get("kind") == "cross"
+        )
+        if attacking_cross:  # attack the ball as it drops through head height
+            for (_, prev), (t, bp) in zip(path, path[1:]):
+                if 1.6 <= bp[2] <= 2.4 and bp[2] < prev[2] and np.linalg.norm(bp[:2] - p.pos) / SPRINT <= t:
+                    return bp[:2]
         for t, bp in path[1:]:
             if bp[2] < 1.8 and np.linalg.norm(bp[:2] - p.pos) / SPRINT <= t:
                 return bp[:2]
@@ -330,6 +340,8 @@ class MatchSimulator:
     def _decide(self, p: SimPlayer) -> None:
         goal = np.array([goal_x_for(p.team), W / 2])
         dist_goal = float(np.linalg.norm(goal - p.pos))
+        if self._try_cross(p):
+            return
         if p.meta.role != "GK" and dist_goal < 28:
             shot_prob = float(np.clip(0.9 - dist_goal / 22, 0.05, 0.6))
             if self.rng.random() < shot_prob:
@@ -352,6 +364,47 @@ class MatchSimulator:
             return
         _, receiver, d = max(candidates, key=lambda c: c[0])
         self._pass(p, receiver, d)
+
+    def _try_cross(self, p: SimPlayer) -> bool:
+        """Wide in the final third: deliver an aerial ball for a teammate to attack with the head."""
+        ax, ay = to_attacking(p.team, *p.pos)
+        if ax < 65 or 20 <= ay <= 48 or self.rng.random() > 0.6:
+            return False
+        targets = [
+            m for m in self._team(p.team)
+            if m is not p and 78 < to_attacking(m.team, *m.pos)[0] < 101 and 18 < to_attacking(m.team, *m.pos)[1] < 50
+        ]
+        if not targets:
+            return False
+        receiver = self.rng.choice(targets)
+        direction = receiver.pos - p.pos
+        d = float(np.linalg.norm(direction))
+        # Aim to land just beyond the attacker so the ball reaches them at head height on the way down.
+        landing = receiver.pos + direction / d * 3.0 + self.np_rng.normal(0, 0.08 * d, 2)
+        landing = np.clip(landing, [1, 1], [L - 1, W - 1])
+        _, pressure_d = self._nearest(self._team(other(p.team)), np.array([*p.pos, 0.0]))
+        foot = self._choose_foot(p, pressure_d)
+        start = np.array([self.ball_pos[0], self.ball_pos[1], 0.03])
+        vel = physics.aerial_launch_velocity(start, landing, self.rng.uniform(20, 28))
+        ev = self._emit(
+            "pass",
+            p,
+            end_x=round(float(landing[0]), 2),
+            end_y=round(float(landing[1]), 2),
+            kind="cross",
+            intended_receiver_id=receiver.id,
+            speed_kmh=round(float(np.linalg.norm(vel)) * 3.6, 1),
+            distance=round(d, 1),
+            pressure_distance=round(pressure_d, 2),
+            body_part=f"{foot}_foot",
+            weak_foot=foot != p.meta.preferred_foot,
+            outcome=None,
+        )
+        self.pending_pass = ev
+        self._kick(p, start, vel, foot)
+        self.ball_spin = np.array([0.0, 0.0, self.rng.uniform(-10, 10)])
+        self.intended_receiver = receiver
+        return True
 
     def _pass(self, p: SimPlayer, receiver: SimPlayer, d: float) -> None:
         aerial = d > 28 or (d > 18 and self.rng.random() < 0.25)
@@ -389,28 +442,31 @@ class MatchSimulator:
         self._kick(p, start, vel, foot)
         self.intended_receiver = receiver
 
-    def _shoot(self, p: SimPlayer, dist_goal: float) -> None:
+    def _shoot(self, p: SimPlayer, dist_goal: float, header: bool = False) -> None:
         gx = goal_x_for(p.team)
         # Shooters aim for a corner; execution error grows with distance.
         if self.rng.random() < 0.5:
             aim_y = self.rng.uniform(physics.GOAL_Y_MIN + 0.3, physics.GOAL_Y_MIN + 1.6)
         else:
             aim_y = self.rng.uniform(physics.GOAL_Y_MAX - 1.6, physics.GOAL_Y_MAX - 0.3)
-        aim_z = self.rng.uniform(0.1, 2.2)
+        aim_z = self.rng.uniform(0.1, 1.2) if header else self.rng.uniform(0.1, 2.2)  # headers aim down
         _, pressure_d = self._nearest(self._team(other(p.team)), np.array([*p.pos, 0.0]))
-        foot = self._choose_foot(p, pressure_d)
-        weak = 1.25 if foot != p.meta.preferred_foot else 1.0
+        foot = "head" if header else self._choose_foot(p, pressure_d)
+        weak = 1.4 if header else 1.25 if foot != p.meta.preferred_foot else 1.0
         aim_y += self.rng.gauss(0, (0.14 * dist_goal + 1.4) * weak)
         aim_z = max(0.0, aim_z + self.rng.gauss(0, 0.07 * dist_goal * weak))
-        start = np.array([self.ball_pos[0], self.ball_pos[1], 0.03])
+        z0 = float(self.ball_pos[2]) if header else 0.03
+        start = np.array([self.ball_pos[0], self.ball_pos[1], z0])
         delta = np.array([gx, aim_y]) - start[:2]
         horiz = float(np.linalg.norm(delta))
-        speed = self.rng.uniform(19, 31)
+        speed = self.rng.uniform(12, 19) if header else self.rng.uniform(19, 31)
         flight = horiz / speed * 1.05
-        vz = (aim_z + 0.5 * physics.G * flight**2) / flight
+        vz = (aim_z - z0 + 0.5 * physics.G * flight**2) / flight
         vel = np.array([*(delta / horiz * speed), vz])
         half_angle = math.atan2(physics.GOAL_WIDTH / 2, max(dist_goal, 1.0))
         xg = 1 / (1 + math.exp(-(0.2 - 0.12 * dist_goal + 1.2 * 2 * half_angle)))
+        if header:
+            xg *= 0.6  # headers convert far less often than footed shots from the same spot
         ev = self._emit(
             "shot",
             p,
@@ -420,14 +476,14 @@ class MatchSimulator:
             distance=round(dist_goal, 1),
             xg=round(xg, 3),
             target_z=round(aim_z, 2),
-            body_part=f"{foot}_foot",
-            weak_foot=foot != p.meta.preferred_foot,
+            body_part="head" if header else f"{foot}_foot",
+            weak_foot=not header and foot != p.meta.preferred_foot,
             outcome=None,
             _aim_y=aim_y,
         )
         self.pending_shot = ev
         self._kick(p, start, vel, foot)
-        self.ball_spin = np.array([0.0, 0.0, self.rng.uniform(-8, 8)])
+        self.ball_spin = None if header else np.array([0.0, 0.0, self.rng.uniform(-8, 8)])
 
     def _choose_foot(self, p: SimPlayer, pressure_d: float) -> str:
         """Mostly the strong foot; under pressure players are forced onto the weak one more often."""
@@ -515,7 +571,7 @@ class MatchSimulator:
                 speed = float(np.linalg.norm(self.ball_vel))
                 if self.rng.random() > float(np.clip(1.5 - speed / 30.0, 0.35, 0.9)):
                     continue
-            reach, max_z = (1.6, 2.6) if gk else (1.0, 1.9)
+            reach, max_z = (1.6, 2.6) if gk else (1.0, HEADER_MAX_Z)
             if self.ball_pos[2] > max_z:
                 continue
             d = float(np.linalg.norm(p.pos - self.ball_pos[:2]))
@@ -524,6 +580,15 @@ class MatchSimulator:
         if best is None:
             return
         p = best[1]
+        z = float(self.ball_pos[2])
+        if p.meta.role != "GK" and z > HEADER_MIN_Z:
+            descending = self.ball_vel[2] < 0
+            if not descending or (z <= 1.9 and self.rng.random() < 0.5):
+                if z > 1.9:
+                    return  # rising ball above chest height: let it go over
+            else:
+                self._header(p)
+                return
         if self.pending_shot is not None:
             shooter_team = self.pending_shot["team"]
             if p.team != shooter_team:
@@ -544,6 +609,71 @@ class MatchSimulator:
             self._set_owner(p, "interception")
             return
         self._set_owner(p, "loose_ball")
+
+    def _header(self, p: SimPlayer) -> None:
+        """Ball met at head height: redirect it without taking control."""
+        from_cross = (
+            self.pending_pass is not None
+            and self.pending_pass["data"].get("kind") == "cross"
+            and self.pending_pass["team"] == p.team
+        )
+        if self.pending_shot is not None:
+            same = self.pending_shot["team"] == p.team
+            self.pending_shot["data"]["outcome"] = "rebound_teammate" if same else "blocked"
+            self.pending_shot = None
+        if self.pending_pass is not None:
+            passer_team = self.pending_pass["team"]
+            if p.team == passer_team and p.id != self.pending_pass["player_id"]:
+                self._resolve_pending("complete", p)
+            elif p.team != passer_team:
+                self._resolve_pending("intercepted", p)
+            else:
+                self._resolve_pending("incomplete", p)
+        if p.team != self.possession_team:
+            self._emit("possession_change", p, cause="header", from_team=self.possession_team)
+            self.possession_team = p.team
+
+        goal = np.array([goal_x_for(p.team), W / 2])
+        dist_goal = float(np.linalg.norm(goal - p.pos))
+        if (dist_goal < 14 or (from_cross and dist_goal < 24)) and abs(p.pos[1] - W / 2) < 18:
+            self._shoot(p, dist_goal, header=True)
+            return
+        mates = [m for m in self._team(p.team) if m is not p and m.meta.role != "GK" and 4 < np.linalg.norm(m.pos - p.pos) < 18]
+        if mates:
+            # Headed lay-off: flat so it arrives at a teammate's feet, not their head.
+            receiver = max(mates, key=lambda m: to_attacking(p.team, *m.pos)[0] + self.rng.gauss(0, 4))
+            target = receiver.pos + self.np_rng.normal(0, 1.5, 2)
+            self.intended_receiver = receiver
+            angle = self.rng.uniform(8, 18)
+        else:  # clearance: head it long and high, away from own goal
+            ahead = np.array([1.0 if p.team == "home" else -1.0, self.rng.uniform(-0.5, 0.5)])
+            target = p.pos + ahead / np.linalg.norm(ahead) * self.rng.uniform(15, 25)
+            receiver = None
+            self.intended_receiver = None
+            angle = self.rng.uniform(30, 45)
+        target = np.clip(target, [1, 1], [L - 1, W - 1])
+        start = self.ball_pos.copy()
+        d = float(np.linalg.norm(target - start[:2]))
+        vel = physics.aerial_launch_velocity(np.array([start[0], start[1], 0.0]), target, angle)
+        vel *= 0.92  # launched from head height, so it carries a little further than from the ground
+        ev = self._emit(
+            "pass",
+            p,
+            end_x=round(float(target[0]), 2),
+            end_y=round(float(target[1]), 2),
+            kind="header" if receiver else "clearance",
+            intended_receiver_id=receiver.id if receiver else None,
+            speed_kmh=round(float(np.linalg.norm(vel)) * 3.6, 1),
+            distance=round(d, 1),
+            pressure_distance=round(self._nearest(self._team(other(p.team)), np.array([*p.pos, 0.0]))[1], 2),
+            body_part="head",
+            weak_foot=False,
+            height_m=round(float(start[2]), 2),
+            outcome=None,
+        )
+        self.pending_pass = ev
+        self.ball_spin = None
+        self._kick(p, start, vel, "head")
 
     # ------------------------------------------------------------- main loop
     def _feet(self, p: SimPlayer) -> tuple[str, float, float, float, float, float, float]:

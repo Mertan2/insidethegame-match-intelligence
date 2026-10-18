@@ -97,6 +97,7 @@ export interface PlayerStats {
   preferred_foot: "left" | "right";
   left_foot: number;
   right_foot: number;
+  headers: number;
   weak_foot_pct: number;
   weak_foot_success_pct: number | null;
 }

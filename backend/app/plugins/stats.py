@@ -40,7 +40,7 @@ class StatsPlugin(Plugin):
         self.players: dict[str, dict[str, float]] = defaultdict(
             lambda: {
                 "distance_m": 0.0, "top_speed_kmh": 0.0, "passes": 0, "passes_completed": 0, "shots": 0, "xg": 0.0,
-                "left_foot": 0, "right_foot": 0, "weak_foot": 0, "weak_foot_completed": 0,
+                "left_foot": 0, "right_foot": 0, "head": 0, "weak_foot": 0, "weak_foot_completed": 0,
             }
         )
         self._prev_pos: dict[str, np.ndarray] = {}
@@ -55,7 +55,7 @@ class StatsPlugin(Plugin):
         player = self.players[event.player_id] if event.player_id else None
         d = event.data
         out: list[Insight] = []
-        if player is not None and event.type in ("pass", "shot") and d.get("body_part") in ("left_foot", "right_foot"):
+        if player is not None and event.type in ("pass", "shot") and d.get("body_part") in ("left_foot", "right_foot", "head"):
             player[d["body_part"]] += 1
             if d.get("weak_foot"):
                 player["weak_foot"] += 1
@@ -168,6 +168,7 @@ class StatsPlugin(Plugin):
                 "preferred_foot": state.players[pid].preferred_foot,
                 "left_foot": p["left_foot"],
                 "right_foot": p["right_foot"],
+                "headers": p["head"],
                 "weak_foot_pct": round(100 * p["weak_foot"] / (p["left_foot"] + p["right_foot"]), 1)
                 if p["left_foot"] + p["right_foot"]
                 else 0.0,

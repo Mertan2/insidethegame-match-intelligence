@@ -44,7 +44,7 @@ export function PlayerFocus({ meta, playerId, plugins, narrations }: Props) {
             label="Weak foot use"
             value={`${stats.weak_foot_pct}%${stats.weak_foot_success_pct !== null ? ` · ${stats.weak_foot_success_pct}% ok` : ""}`}
           />
-          <FootSplit left={stats.left_foot} right={stats.right_foot} />
+          <FootSplit left={stats.left_foot} right={stats.right_foot} headers={stats.headers} />
         </div>
       ) : (
         <p className="muted small">Enable the stats plugin for live numbers.</p>
@@ -62,17 +62,18 @@ export function PlayerFocus({ meta, playerId, plugins, narrations }: Props) {
   );
 }
 
-function FootSplit({ left, right }: { left: number; right: number }) {
-  const total = left + right;
-  const leftPct = total ? (100 * left) / total : 50;
+function FootSplit({ left, right, headers }: { left: number; right: number; headers: number }) {
+  const total = left + right + headers;
+  const pct = (n: number) => (total ? (100 * n) / total : 0);
   return (
     <div className="foot-split">
       <div className="muted small">
-        Touches L {left} · R {right}
+        Touches L {left} · R {right} · Head {headers}
       </div>
       <div className="foot-bar">
-        <div style={{ width: `${leftPct}%` }} className="foot-left" />
-        <div style={{ width: `${100 - leftPct}%` }} className="foot-right" />
+        <div style={{ width: `${total ? pct(left) : 50}%` }} className="foot-left" />
+        <div style={{ width: `${pct(headers)}%` }} className="foot-head" />
+        <div style={{ width: `${total ? pct(right) : 50}%` }} className="foot-right" />
       </div>
     </div>
   );
