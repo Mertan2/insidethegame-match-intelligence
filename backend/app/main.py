@@ -302,4 +302,14 @@ async def live(
 # Production: serve the built frontend from the same origin (single container).
 _static = Path(os.getenv("STATIC_DIR", Path(__file__).resolve().parent.parent / "static"))
 if _static.is_dir():
+
+    @app.middleware("http")
+    async def no_stale_index(request, call_next):
+        """The page itself must always be re-checked so visitors get the latest build;
+        hashed assets under /assets can still be cached forever."""
+        response = await call_next(request)
+        if not request.url.path.startswith(("/api/", "/assets/", "/ws/")):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     app.mount("/", StaticFiles(directory=_static, html=True), name="frontend")
