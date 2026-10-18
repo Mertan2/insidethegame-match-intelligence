@@ -13,6 +13,19 @@ from .base import Agent, Blackboard
 THRESHOLD = {"casual": 0.55, "analyst": 0.4}
 
 
+def goal_effect(score_after: dict[str, int], scorer: str) -> str:
+    """What a goal did to the game, stated outright so the model can't guess wrong."""
+    other = "away" if scorer == "home" else "home"
+    mine, theirs = score_after.get(scorer, 0), score_after.get(other, 0)
+    if mine == theirs:
+        return "equaliser"
+    if mine == theirs + 1:
+        return "opening goal, takes the lead" if theirs == 0 and mine == 1 else "takes the lead"
+    if mine > theirs:
+        return "extends the lead"
+    return "pulls one back, still behind"
+
+
 class StatsAgent(Agent):
     name = "stats"
     role = "Selects the key moment and the facts that support it"
@@ -38,6 +51,9 @@ class StatsAgent(Agent):
             return
         ins = max(candidates, key=score)
         facts: dict[str, Any] = {k: v for k, v in ins.data.items() if v is not None and not isinstance(v, (dict, list))}
+        facts["score_now"] = f"{bb.team_names.get('home', 'Home')} {bb.score.get('home', 0)}-{bb.score.get('away', 0)} {bb.team_names.get('away', 'Away')}"
+        if ins.kind == "goal" and ins.team in ("home", "away"):
+            facts["goal_effect"] = goal_effect(bb.score, ins.team)
         stats = (bb.snapshots.get("stats") or {}).get("teams", {})
         if ins.team and ins.team in stats:
             team = stats[ins.team]

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "s1",
+    "voice": "Live match data tells you what happened. Inside the Game tells you why it matters, for every fan, as it happens.",
+    "caption": "Live match data \u2192 explainable match intelligence",
+    "min_s": 10,
+    "audio_s": 7.15,
+    "dur_s": 10
+  },
+  {
+    "id": "s2",
+    "voice": "It all starts from raw tracking. Twenty two players and the ball in three D, ten times a second, right down to each player's feet. Analytics plugins turn that into deeper stats, and each one can be switched on or off live.",
+    "caption": "Raw tracking: 22 players + ball in 3D, foot positions, toggleable analytics plugins",
+    "min_s": 16,
+    "audio_s": 13.44,
+    "dur_s": 16
+  },
+  {
+    "id": "s3",
+    "voice": "Our physics model forecasts the ball's flight. Watch the shot. It calls it on target before the ball arrives, accurate to about fifteen centimetres, one second ahead.",
+    "caption": "3D ball-flight forecast: calls the shot on target before it arrives",
+    "min_s": 16,
+    "audio_s": 10.09,
+    "dur_s": 16
+  },
+  {
+    "id": "s4",
+    "voice": "Then a team of A I agents on Microsoft Agent Framework explains the moment. The stats agent grounds the facts, the tactics agent explains why it matters, and the narrator writes the line. Every step is traced.",
+    "caption": "Multi-agent explanation on Microsoft Agent Framework + Azure OpenAI, fully traced",
+    "min_s": 20,
+    "audio_s": 12.92,
+    "dur_s": 20
+  },
+  {
+    "id": "s5",
+    "voice": "The persona agent tailors it to you. Casual or analyst, your club, your player, in your language. Here, live Turkish commentary while the camera follows one striker.",
+    "caption": "Personalised: casual or analyst, favourite player, any language",
+    "min_s": 22,
+    "audio_s": 10.45,
+    "dur_s": 22
+  },
+  {
+    "id": "s6",
+    "voice": "At full time, the recap agent writes the match report automatically.",
+    "caption": "Automated match recap",
+    "min_s": 10,
+    "audio_s": 4.23,
+    "dur_s": 10
+  },
+  {
+    "id": "s7",
+    "voice": "Inside the Game. Built with Microsoft Agent Framework, Azure OpenAI and Azure Container Apps. Explainable match intelligence for every fan.",
+    "caption": "",
+    "min_s": 9,
+    "audio_s": 9.11,
+    "dur_s": 10.31
+  }
+]

@@ -9,3 +9,4 @@ frontend/dist/
 .DS_Store
 .claude/settings.local.json
 *.tsbuildinfo
+demo/*.mp4
