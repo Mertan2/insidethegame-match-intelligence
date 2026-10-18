@@ -191,6 +191,26 @@ export interface OverlayCue {
   data: Record<string, unknown>;
 }
 
+export interface SeriesPoint {
+  t: number;
+  possHome: number | null;
+  xgHome: number;
+  xgAway: number;
+  momentum: number;
+  ballKmh: number;
+  goalsHome: number;
+  goalsAway: number;
+}
+
+export interface Answer {
+  question: string;
+  answer: string;
+  tools: { tool: string; args: Record<string, unknown> }[];
+  path: string;
+  clock: string;
+  ms: number;
+}
+
 export interface Recap {
   title: string;
   paragraphs: string[];

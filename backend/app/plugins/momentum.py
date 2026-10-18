@@ -10,6 +10,7 @@ from .base import Insight, MatchState, Plugin
 
 MOMENTUM_WINDOW_S = 300.0
 CHAOS_WINDOW_S = 180.0
+PUNDIT_EVERY_S = 120.0  # periodic "state of play" moment so live commentary never goes quiet
 
 
 class MomentumPlugin(Plugin):
@@ -24,6 +25,7 @@ class MomentumPlugin(Plugin):
         self._last_momentum = 0.0
         self._last_regime = "balanced"
         self._last_swing_t = -1e9
+        self._last_pundit_t = -1e9
         self._pending: list[Insight] = []
         self.current: dict[str, Any] | None = None
 
@@ -109,6 +111,22 @@ class MomentumPlugin(Plugin):
                 )
             )
         self._last_regime = regime
+        if t - self._last_pundit_t >= PUNDIT_EVERY_S and t >= 60:
+            self._last_pundit_t = t
+            leader = "home" if momentum > 0.15 else "away" if momentum < -0.15 else None
+            self._pending.append(
+                Insight(
+                    t=t,
+                    kind="state_of_play",
+                    importance=0.56,
+                    source=self.name,
+                    team=leader,
+                    headline=(f"{state.team_name(leader)} on top" if leader else "Evenly balanced") + f", game is {regime}",
+                    data={"momentum": round(momentum, 2), "regime": regime,
+                          "possession_changes_per_min": self.current["possession_changes_per_min"],
+                          "passes_last_min_home": passes_per_min["home"], "passes_last_min_away": passes_per_min["away"]},
+                )
+            )
         return self.current
 
     def drain_insights(self) -> list[Insight]:

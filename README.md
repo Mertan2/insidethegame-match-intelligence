@@ -7,6 +7,17 @@ forecast, and a multi-agent narrator that writes for each viewer.
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 
+What to try:
+- **DATA tab:** the raw feed made visible. Live throughput (messages/s, KB/s), xG race, possession, momentum and
+  ball-speed charts building second by second, a 22-player tracking table (position, live speed, foot heights)
+  and the event stream as it arrives.
+- **Ask the AI:** ask anything about the match in any language ("who is tiring?", "why are they dominating?").
+  An agent with function calling picks live-data tools (`get_match_state`, `get_player`, `get_team_stats`,
+  `get_recent_events`, `get_top_players`, `get_ball_forecast`) and answers only from what they return. The tools
+  it used are shown under each answer.
+- **Live AI commentary:** every line is written by the agent team (labelled with the model), including
+  "state of play" updates every two match minutes.
+
 ```
 Synthetic generator ──► Replay engine ──► Plugin pipeline ──► Agents ──► WebSocket ──► React UI
  (22 players + ball      (live pacing,      stats, pass quality,    stats → tactics →     2D pitch, 3D ball,

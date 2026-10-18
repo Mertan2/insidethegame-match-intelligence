@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Ball3D } from "./components/Ball3D";
+import { AskPanel } from "./components/AskPanel";
 import { CommentaryFeed } from "./components/CommentaryFeed";
 import { Controls } from "./components/Controls";
+import { DataView } from "./components/DataView";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
 import { OverlayLayer } from "./components/OverlayLayer";
 import { Pitch2D } from "./components/Pitch2D";
@@ -16,12 +18,16 @@ const DEFAULT_PERSONA: Persona = { mode: "casual", language: "en", favorite_team
 export default function App() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [persona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
-  const [view, setView] = useState<"2d" | "3d" | "both">("both");
+  const [view, setView] = useState<"2d" | "3d" | "both" | "data">("both");
+  const [model, setModel] = useState<string | null>(null);
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   // The current persona is read when (re)connecting, so switching match keeps the viewer's settings.
-  const { state, send, clearNarrations } = useLiveMatch(matchId, persona, 4);
+  const { state, send, ask, clearNarrations } = useLiveMatch(matchId, persona, 4);
 
   useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h: { model: string | null }) => setModel(h.model));
     fetch("/api/matches")
       .then((r) => r.json())
       .then((list: MatchSummary[]) => {
@@ -59,9 +65,12 @@ export default function App() {
           <span className="clock">{clock}</span>
           {state.ended && <span className="chip">FT</span>}
           {!state.connected && <span className="chip warn">offline</span>}
+          <span className={`ai-badge ${model ? "on" : ""}`} title="Live commentary, explanations and answers are written by this model">
+            {model ? `AI live · Azure OpenAI ${model}` : "AI offline · rule templates"}
+          </span>
         </div>
         <div className="segmented">
-          {(["2d", "3d", "both"] as const).map((v) => (
+          {(["2d", "3d", "both", "data"] as const).map((v) => (
             <button key={v} className={view === v ? "active" : ""} onClick={() => setView(v)}>
               {v.toUpperCase()}
             </button>
@@ -92,6 +101,26 @@ export default function App() {
       />
 
       <main>
+        {view === "data" && (
+          <section className="views data">
+            <DataView
+              meta={meta}
+              frame={frame}
+              plugins={state.plugins}
+              series={state.series}
+              events={state.events}
+              feed={state.feed}
+              playerKmh={state.playerKmh}
+              pitch={
+                <>
+                  <OverlayLayer meta={meta} cues={state.plugins.overlays?.active ?? []} />
+                  <Pitch2D meta={meta} frame={frame} forecast={state.plugins.ball_forecast} speed={state.plugins.speed_metrics} favoritePlayer={persona.favorite_player} />
+                </>
+              }
+            />
+          </section>
+        )}
+        {view !== "data" && (
         <section className={`views ${view}`}>
           {view !== "3d" && (
             <div className="view view2d">
@@ -111,11 +140,13 @@ export default function App() {
             </div>
           )}
         </section>
+        )}
         <aside>
+          <AskPanel answers={state.answers} asking={state.asking} onAsk={ask} persona={persona} model={model} />
           {persona.favorite_player && (
             <PlayerFocus meta={meta} playerId={persona.favorite_player} plugins={state.plugins} narrations={state.narrations} />
           )}
-          <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} />
+          <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} model={model} />
         </aside>
         <section className="bottom">
           <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />

@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .agents import Orchestrator, Persona, get_llm
+from .agents.ask_agent import AskAgent, LiveContext
 from .models import Match
 from .pipeline import LivePipeline
 from .plugins import describe_plugins
@@ -32,6 +33,10 @@ llm = get_llm()
 async def lifespan(app: FastAPI):
     global store
     store = MatchStore()
+    if llm.available:
+        # Open the connection to the model now, so the first live commentary isn't slowed by a cold start.
+        warmup = asyncio.create_task(llm.complete("Reply with: ok", "ok", max_tokens=3))
+        warmup.add_done_callback(lambda t: t.exception())  # best effort; never crash startup
     if not store.list():
         await asyncio.to_thread(store.generate, DEFAULT_SEED, DEFAULT_MINUTES)
     yield
@@ -60,7 +65,7 @@ class GenerateRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "llm": type(llm).__name__}
+    return {"ok": True, "llm": type(llm).__name__, "model": getattr(llm, "deployment", None)}
 
 
 @app.get("/api/matches")
@@ -157,6 +162,7 @@ async def live(
     pipeline = LivePipeline(match, plugins.split(",") if plugins else None)
     engine = ReplayEngine(match, speed)
     orchestrator = Orchestrator(match.meta, llm)
+    ask_agent = AskAgent(llm)
     persona = Persona(mode=mode, language=lang, favorite_team=favorite_team, favorite_player=favorite_player)
     send_lock = asyncio.Lock()
     narration_tasks: set[asyncio.Task] = set()
@@ -204,6 +210,25 @@ async def live(
             elif kind == "persona":
                 persona = Persona(**{**persona.model_dump(), **msg.get("persona", {})})
                 await send({"type": "persona_ack", "persona": persona.model_dump()})
+            elif kind == "ask":
+                question = str(msg.get("question", "")).strip()[:300]
+                if question:
+                    task = asyncio.create_task(answer(question, persona))
+                    narration_tasks.add(task)
+                    task.add_done_callback(narration_tasks.discard)
+
+    async def answer(question: str, p: Persona) -> None:
+        state = pipeline.state
+        frame = state.frame
+        ctx = LiveContext(
+            meta=match.meta,
+            t=frame.t if frame else 0.0,
+            score=dict(frame.score) if frame else {"home": 0, "away": 0},
+            snapshots=pipeline.snapshots(),
+            events=list(state.events),
+            favorite_player=p.favorite_player,
+        )
+        await send({"type": "answer", **(await ask_agent.answer(question, ctx, p))})
 
     async def sender() -> None:
         while True:

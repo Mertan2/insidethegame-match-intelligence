@@ -17,6 +17,7 @@ from agent_framework import Executor, Workflow, WorkflowBuilder, WorkflowContext
 
 from ..models import MatchMeta
 from ..plugins import Insight
+from .ask_agent import AskAgent
 from .base import Agent, Blackboard, Persona
 from .llm import LLMClient, NullLLM
 from .narrator_agent import NarratorAgent
@@ -85,7 +86,7 @@ class Orchestrator:
         self._last_t = -1e9
         self.history: list[dict[str, Any]] = []
 
-    AGENT_CLASSES = (StatsAgent, TacticsAgent, NarratorAgent, PersonaAgent, RecapAgent)
+    AGENT_CLASSES = (StatsAgent, TacticsAgent, NarratorAgent, PersonaAgent, RecapAgent, AskAgent)
 
     @classmethod
     def describe_agents(cls) -> list[dict[str, str]]:

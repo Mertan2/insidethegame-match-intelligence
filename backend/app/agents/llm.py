@@ -40,6 +40,7 @@ class FoundryLLM:
     available = True
 
     def __init__(self, endpoint: str, api_key: str, deployment: str, api_version: str = "2024-10-21"):
+        self.deployment = deployment
         self.url = f"{endpoint.rstrip('/')}/openai/deployments/{deployment}/chat/completions"
         self.params = {"api-version": api_version}
         self.headers = {"api-key": api_key}
@@ -63,6 +64,18 @@ class FoundryLLM:
         if not content:
             raise ValueError("Empty completion")
         return content.strip()
+
+    async def chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], max_tokens: int = 400) -> dict[str, Any]:
+        """One chat-completions turn with function calling; returns the assistant message
+        (with `tool_calls` when the model wants data)."""
+        body: dict[str, Any] = {"messages": messages, "tools": tools, "tool_choice": "auto"}
+        if self._reasoning_model:
+            body["max_completion_tokens"] = max_tokens * 8
+        else:
+            body.update(max_tokens=max_tokens, temperature=0.4)
+        resp = await self._client.post(self.url, params=self.params, headers=self.headers, json=body, timeout=20.0)
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]
 
 
 class LLMChatClient(FunctionInvocationLayer, BaseChatClient):
