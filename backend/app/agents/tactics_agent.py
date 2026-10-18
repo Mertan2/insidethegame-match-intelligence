@@ -8,7 +8,8 @@ from .base import Agent, Blackboard
 
 SYSTEM = (
     "You are a football tactics analyst. Explain in at most two sentences why the moment matters. "
-    "Use only the numbers provided. No invented facts."
+    "Use only the numbers provided. No invented facts. "
+    "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
 

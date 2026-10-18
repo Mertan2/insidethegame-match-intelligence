@@ -28,6 +28,17 @@ def estimate_velocity(track: np.ndarray, dt: float) -> np.ndarray:
     return v
 
 
+def placement(y: float, z: float, shooting_team: str | None) -> str:
+    """Where the ball crosses the goal line, from the shooter's point of view, e.g. 'low left corner'."""
+    height = "high" if z > 1.6 else "low" if z < 0.6 else "mid-height"
+    across = y - physics.PITCH_WIDTH / 2
+    if abs(across) <= 1.2:
+        return f"{height} and central"
+    # Home attacks towards +x, where the shooter's left is +y; away is mirrored.
+    left = (across > 0) == (shooting_team == "home")
+    return f"{height} {'left' if left else 'right'} corner" if abs(across) > 2.4 else f"{height} {'left' if left else 'right'}"
+
+
 class BallForecastPlugin(Plugin):
     name = "ball_forecast"
     description = "Physics-based 3D ball trajectory, landing point and goal-line forecast"
@@ -70,7 +81,12 @@ class BallForecastPlugin(Plugin):
                 player_id=shot.player_id,
                 headline=f"Forecast: {state.player_name(shot.player_id)}'s shot is on target, "
                 f"arriving in {crossing['in_s']:.1f}s",
-                data={"lead_s": crossing["in_s"], "y": crossing["y"], "z": crossing["z"], "speed_kmh": shot.data.get("speed_kmh")},
+                # Words, not raw coordinates: language models misread a goal-mouth y of 33.7 as a distance.
+                data={
+                    "lead_s": crossing["in_s"],
+                    "placement": placement(crossing["y"], crossing["z"], shot.team),
+                    "speed_kmh": shot.data.get("speed_kmh"),
+                },
             )
         )
 

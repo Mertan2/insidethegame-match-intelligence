@@ -8,7 +8,8 @@ from .base import Agent, Blackboard
 
 SYSTEM = (
     "You write concise football match reports (max 180 words) for the given persona and language. "
-    "Use only the facts provided."
+    "Use only the facts provided. "
+    "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
 

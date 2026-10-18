@@ -8,7 +8,9 @@ from .base import Agent, Blackboard
 
 SYSTEM = (
     "You adapt football commentary for a specific viewer. Rewrite the text for the given persona "
-    "and translate it into the target language. Keep every number unchanged. Return only the text."
+    "and translate it into the target language. Keep every number unchanged. Return only the text. "
+    "Casual mode: at most two short sentences, plain words. Analyst mode: keep the key numbers. "
+    "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
 

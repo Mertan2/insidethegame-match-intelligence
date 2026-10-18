@@ -1,7 +1,7 @@
 # Submission kit
 
-Draft text for the Innovation Studio project page and the demo video. Lines marked **[TODO]** depend on
-steps not done yet (live Foundry model, Azure deploy). Update or remove them before submitting.
+Draft text for the Innovation Studio project page and the demo video. Remaining **[TODO]** markers are
+the video and anything only you can confirm.
 
 ## Project name
 
@@ -49,9 +49,12 @@ ran how, so the live feed never goes silent if a model call fails.
 
 **Microsoft technology**
 - Microsoft Agent Framework: agents and workflow orchestration.
-- Microsoft Foundry / Azure OpenAI: model behind tactics, narrator, persona and recap agents. **[TODO: confirm live deployment and model name]**
-- Azure Container Apps: single-container deployment (UI, API and WebSocket). **[TODO: add live URL]**
-- GitHub: public repository. **[TODO: mention GitHub Copilot only if you used it]**
+- Microsoft Foundry / Azure OpenAI: `gpt-4.1-mini` (Sweden Central) powers the tactics, narrator, persona and recap
+  agents; verified live in English, Turkish and Spanish with about 1 s per agent.
+- Azure Container Apps: single-container deployment (UI, API and WebSocket), image built in Azure Container
+  Registry, model key stored as a Container Apps secret. Live: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
+- GitHub: public repository with GitHub Actions CI (tests, frontend build, Docker build and smoke test).
+  **[TODO: mention GitHub Copilot only if you used it]**
 
 **Impact.** The same engine serves a studio analyst, a streaming overlay and a casual fan, in their own
 language, from one data feed. The overlay timeline and WebSocket protocol are designed to plug into a
@@ -60,7 +63,7 @@ production graphics path.
 ## Links
 
 - Repo: https://github.com/Mertan2/insidethegame-match-intelligence
-- Demo: **[TODO: Azure Container Apps URL]**
+- Demo: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 - Video: **[TODO: YouTube/Vimeo URL]**
 
 ## Demo video script (≤ 2:00)
@@ -73,14 +76,14 @@ No copyrighted music or third-party logos. Record at 1080p; use 4x–8x replay s
 | 0:12–0:30 | 3D view zoomed on players, legs moving; toggle plugins on/off | "Everything starts from raw tracking: 22 players, the ball in 3D, even each player's feet. Analytics plugins derive deeper stats and can be switched on or off live." |
 | 0:30–0:52 | A shot: dashed forecast arc, "ON TARGET in 0.4s" overlay, then save or goal | "Our physics model forecasts the ball's flight. Here it called the shot on target before it arrived, accurate to about 15 centimetres." |
 | 0:52–1:15 | Analyst mode: narration with "why" bullets and agent trace | "A team of AI agents on Microsoft Agent Framework explains the moment: the stats agent grounds the facts, tactics explains why, the narrator writes the line." |
-| 1:15–1:35 | Switch to casual mode, Turkish, follow a player; camera follows, focus panel | "The persona agent tailors it: casual or analyst, any language, or follow one player all match." **[needs live model for translation]** |
+| 1:15–1:35 | Switch to casual mode, Turkish, follow a player; camera follows, focus panel | "The persona agent tailors it: casual or analyst, any language, or follow one player all match." |
 | 1:35–1:50 | Click Generate recap at full time | "At full time the recap agent writes the match report automatically." |
 | 1:50–2:00 | Architecture slide or repo page | "Inside the Game: Agent Framework, Foundry and Azure Container Apps. Explainable match intelligence for every fan." |
 
 ## Before submitting
 
-- [ ] `backend/.env` filled; `scripts/check_foundry.py` passes; translation shows in the UI
-- [ ] Deployed on Azure Container Apps; URL works in a private browser window
+- [x] `backend/.env` filled; `scripts/check_foundry.py` passes; translation shows in the UI
+- [x] Deployed on Azure Container Apps (check the URL once more in a private window before submitting)
 - [ ] Video recorded, under 2:00, uploaded as public/unlisted on YouTube or Vimeo
 - [ ] TODO markers above resolved
 - [ ] Submitted by **Oct 27, 11:59 PM PT**

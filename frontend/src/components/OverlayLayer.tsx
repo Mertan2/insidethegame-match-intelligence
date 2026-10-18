@@ -43,7 +43,10 @@ function CueBody({ cue, meta }: { cue: OverlayCue; meta: MatchMeta }) {
         <>
           <div className="cue-kicker">BALL TRACKER</div>
           <div className="cue-title">ON TARGET in {Number(d.lead_s).toFixed(1)}s</div>
-          <div className="cue-sub">{d.speed_kmh} km/h</div>
+          <div className="cue-sub">
+            {d.placement ? `${d.placement} · ` : ""}
+            {d.speed_kmh} km/h
+          </div>
         </>
       );
     case "shot_speed":

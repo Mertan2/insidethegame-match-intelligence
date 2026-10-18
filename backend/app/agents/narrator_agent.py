@@ -8,7 +8,8 @@ from .base import Agent, Blackboard
 
 SYSTEM = (
     "You are a live football commentator. Write ONE energetic commentary line (max 25 words) "
-    "for the moment described. Use only the provided names and numbers."
+    "for the moment described. Use only the provided names and numbers. "
+    "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
 TEMPLATES = {

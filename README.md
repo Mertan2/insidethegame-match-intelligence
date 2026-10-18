@@ -4,6 +4,9 @@ Hackathon project for **Microsoft + Premier League "Inside the Game"**. It turns
 live, explainable match intelligence: stats derived from raw data, a bird's-eye view, a 3D ball-flight
 forecast, and a multi-agent narrator that writes for each viewer.
 
+**Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
+(Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
+
 ```
 Synthetic generator ──► Replay engine ──► Plugin pipeline ──► Agents ──► WebSocket ──► React UI
  (22 players + ball      (live pacing,      stats, pass quality,    stats → tactics →     2D pitch, 3D ball,
@@ -67,7 +70,18 @@ WebSocket. On Azure Container Apps (builds in the cloud, no local Docker needed)
 az containerapp up --name insidethegame --resource-group <rg> --location <region> --source . --ingress external --target-port 8000
 ```
 
-Set the `AZURE_OPENAI_*` values as container app secrets/env vars rather than baking `.env` into the image.
+Keep the model key out of the image: store it as a Container Apps secret and reference it.
+
+```bash
+az containerapp secret set -n insidethegame -g <rg> --secrets aoai-key=<key>
+```
+
+```bash
+az containerapp update -n insidethegame -g <rg> --min-replicas 1 --set-env-vars AZURE_OPENAI_ENDPOINT=<endpoint> AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini AZURE_OPENAI_API_KEY=secretref:aoai-key
+```
+
+To ship a new version: `az acr build -r <registry> -t insidethegame:<tag> .`, then
+`az containerapp update -n insidethegame -g <rg> --image <registry>.azurecr.io/insidethegame:<tag>`.
 
 ## Data
 
