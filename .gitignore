@@ -10,3 +10,4 @@ frontend/dist/
 .claude/
 *.tsbuildinfo
 demo/*.mp4
+demo/*.mp3
