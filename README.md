@@ -24,12 +24,47 @@ What to try:
 - **Live AI commentary:** every line is written by the agent team (labelled with the model), including
   "state of play" updates every two match minutes.
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Data["Ingest"]
+        GEN["Synthetic match generator<br/>22 players + ball xyz @10 Hz,<br/>feet, events"] --> REPLAY["Replay engine<br/>live pacing, pause/seek/speed"]
+    end
+    subgraph Plugins["Interpret: analytics plugins"]
+        STATS["stats / xG"]
+        PASS["pass quality"]
+        SPEED["speed + sprint tags"]
+        FC["3D ball forecast"]
+        MOM["momentum / chaos"]
+        DIR["broadcast director<br/>play-by-play, fun facts, recaps"]
+        OVL["overlays<br/>broadcast cues"]
+    end
+    REPLAY --> Plugins
+    Plugins -- insights --> SCHED["Commentary scheduler<br/>key moments first,<br/>paced for voice"]
+    subgraph Agents["Explain + personalise: Microsoft Agent Framework"]
+        direction LR
+        A1["Stats agent<br/>(deterministic facts)"] --> A2["Tactics agent<br/>why it matters"] --> A3["Narrator agent<br/>the line"] --> A4["Persona agent<br/>mode, favourites, language"]
+        BB[("Blackboard<br/>workflow shared state")]
+        A1 -.-> BB
+        A2 -.-> BB
+        A3 -.-> BB
+        A4 -.-> BB
+    end
+    SCHED --> A1
+    ASK["Ask agent<br/>function calling over<br/>6 live-data tools"]
+    RECAP["Recap agent"]
+    AOAI["Azure OpenAI<br/>gpt-4.1-mini"]
+    A2 & A3 & A4 & ASK & RECAP --> AOAI
+    A4 --> WS["WebSocket feed"]
+    ASK --> WS
+    Plugins --> WS
+    WS --> UI["React UI<br/>2D / 3D / DATA, kick-off,<br/>player focus, Ask the AI"]
+    UI -- "/api/tts" --> TTS["Azure AI Speech<br/>neural voices, 7 languages"]
 ```
-Synthetic generator ──► Replay engine ──► Plugin pipeline ──► Agents ──► WebSocket ──► React UI
- (22 players + ball      (live pacing,      stats, pass quality,    stats → tactics →     2D pitch, 3D ball,
-  x/y/z @10Hz, events)    pause/seek/speed)  speed, ball forecast,   narrator → persona    stats, narrative, recap
-                                             momentum/chaos          (+ recap)
-```
+
+Every agent runs with a timeout and a deterministic template fallback, and each narration carries a trace of
+which agent ran, by which path and how long it took. Everything runs in one Azure Container Apps container.
 
 Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins) → **explain** (tactics agent)
 → **render** (2D/3D overlays) → **personalize** (persona agent: casual/analyst, favourite club/player, language).
