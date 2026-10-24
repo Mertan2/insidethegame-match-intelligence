@@ -11,3 +11,4 @@ frontend/dist/
 *.tsbuildinfo
 demo/*.mp4
 demo/*.mp3
+docs/hackathon-home.md
