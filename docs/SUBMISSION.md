@@ -1,98 +1,106 @@
 # Submission kit
 
-Draft text for the Innovation Studio project page and the demo video. Remaining **[TODO]** markers are
-the video and anything only you can confirm.
+Paste-ready text for the Innovation Studio **Create project** form. Submissions close **Oct 27, 2026, 11:59 PM PT**.
 
 ## Project name
 
 Inside the Game: Match Intelligence
 
-## Elevator pitch (short)
+## Category
 
-A live match-intelligence engine that turns raw synthetic football tracking into explained moments.
-It derives deeper stats, forecasts the ball's 3D flight before it lands, and has a team of AI agents
-narrate why each moment matters, tailored to every fan.
+Best Multi-Agent Orchestration (also eligible for the Grand Prize)
+
+## Tagline (one line)
+
+A team of AI agents that watches every event of a football match and explains it live, spoken and personalised for every fan.
+
+## Elevator pitch
+
+Live match data says *what* happened; fans, studios and broadcasters want *why* it matters, instantly, for very
+different audiences. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
+intelligence: deeper stats, a 3D ball-flight forecast that calls shots on target before they arrive, and a team of
+specialised AI agents on Microsoft Agent Framework that commentates the whole match live, out loud, in the viewer's
+language, as a casual fan or an analyst. Built with Microsoft Agent Framework, Azure OpenAI (Microsoft Foundry
+models), Azure AI Speech and Azure Container Apps.
 
 ## Description
 
-**Problem.** Live data feeds say *what* happened: a pass, a shot, 58% possession. Broadcasters and fans
-want *why* it matters, delivered instantly, for very different audiences (an analyst and a casual fan
-watching the same match).
+**The problem.** A live feed is a stream of numbers. Turning it into a story ("that's their longest passing move of
+the match", "it comes against the run of play", "the forecast called it on target 0.3 s before it arrived") normally
+takes a studio team, and it is produced once for everyone.
 
-**What we built.** A pipeline covering the hackathon's five stages:
+**What it does.** Open the app, choose a language and casual or analyst mode, press **Kick off**. The match plays
+and an AI commentary team talks you through it continuously: play-by-play of what is on screen, fun facts as they
+happen, running and half-time/full-time recaps, and every goal and big chance first. You can ask it anything
+mid-match ("who is tiring?", "why are they dominating?") and see exactly which live-data tools it used to answer.
 
-1. **Ingest.** Our own agent-based simulator generates football-realistic data: 22 players and the ball in
-   3D at 10 Hz, **left/right foot tracking** from a gait model, preferred foot per player, and a full event
-   stream (passes, shots, tackles, pressure, possession changes, restarts). A replay engine streams it like
-   a live feed with pause, seek and up to 32x speed.
-2. **Interpret.** Toggleable analytics plugins derive deeper data from the raw feed: possession, xG,
-   pass difficulty rating (including weak-foot use), ball and shot speed, sprint detection, momentum, and a
-   "control vs chaos" index.
-3. **Explain.** A physics-based **3D ball forecast** predicts flight path, landing point and whether a shot
-   is on target, often before the ball arrives. It is scored against reality (about 0.1–0.2 m error one
-   second ahead). Multiple agents then explain the moment, not just report it.
-4. **Render.** A bird's-eye 2D tactical view, a 3D match view with a follow camera, and **broadcast overlay
-   cues** (timed, machine-readable graphics instructions, also exported as a timeline via API for a
-   graphics engine).
-5. **Personalize.** Casual vs analyst modes, favourite club, a **player-focus mode** (camera, stats and
-   commentary follow one player), and language selection.
+**The pipeline (the brief's five stages).**
+1. **Ingest:** an agent-based simulator produces football-realistic data (22 players and the ball in 3D at 10 Hz,
+   left/right foot positions, headers, crosses, fatigue, a full event stream), replayed like a live feed.
+2. **Interpret:** toggleable analytics plugins: possession, xG, pass difficulty (incl. weak-foot use), ball and shot
+   speed, sprint tags, momentum, a control-vs-chaos index, fatigue from tracking alone.
+3. **Explain:** a physics ball-flight forecast (gravity, drag, spin, bounce) predicts landing points and goal-line
+   crossings and is scored against reality (about 0.1–0.2 m error one second ahead); the agents explain why each
+   moment matters.
+4. **Render:** 2D tactical and 3D views, broadcast graphics (lower thirds, "ON TARGET" calls, fun-fact cards) also
+   exported as a timed, machine-readable cue timeline for a graphics engine, and a DATA tab showing the raw feed,
+   live charts and a 22-player tracking table.
+5. **Personalise:** casual vs analyst, favourite club, a player-focus mode (camera, stats and commentary follow one
+   player), 7 languages, spoken by neural voices.
 
-**See the data live.** A DATA tab shows the raw feed as it streams: throughput, xG race, possession,
-momentum and ball-speed charts building second by second, a 22-player tracking table with live speed and
-foot heights, and the event stream.
+**Multi-agent orchestration (Microsoft Agent Framework).**
+- **Distinct roles.** A deterministic *broadcast director* watches every event and frame and writes briefs
+  (play-by-play, fun facts, recaps). The *stats agent* picks the moment and the grounded facts. The *tactics agent*
+  explains why it matters. The *narrator agent* writes the line. The *persona agent* adapts tone, focus and language
+  to the viewer. The *recap agent* writes match reports. The *ask agent* answers viewer questions with function
+  calling over six live-data tools.
+- **Shared state and handoffs.** The live chain is an Agent Framework `Workflow` with one executor per agent; agents
+  coordinate through a blackboard in workflow shared state, each writing its own slot and handing off to the next. A
+  commentary scheduler decides what is said when: key moments jump the queue, routine briefs are paced for a voice
+  to read, stale play is never described.
+- **Grounding.** Numbers come only from the deterministic stats layer; language-model agents phrase, explain and
+  translate, and are told the score and what each goal did ("equaliser", "takes the lead") so they cannot invent it.
+- **Recovering from failure.** Every agent runs with a timeout and a deterministic template fallback; each narration
+  carries a trace of which agent ran, by which path and how long it took (visible in analyst mode), so one failing
+  model call never silences the broadcast.
+- **End-to-end outcome.** From raw tracking to spoken, personalised, explained commentary for the whole match, which
+  no single agent could produce live and grounded at the same time.
 
-**Ask the AI.** Viewers ask anything, in any language. An agent with Azure OpenAI function calling picks
-live-data tools (match state, team stats, a player, recent events, top players, ball forecast) and answers
-only from what they return; the tools it used are shown under each answer.
+**Microsoft and Azure technology.**
+- **Microsoft Agent Framework:** agents and the live narration workflow.
+- **Azure OpenAI (`gpt-4.1-mini`, Microsoft Foundry model):** tactics, narrator, persona, recap and ask agents,
+  including function calling.
+- **Azure AI Speech:** neural-voice spoken commentary and answers in 7 languages.
+- **Azure Container Apps + Azure Container Registry:** single container serving the UI, REST and WebSocket feed;
+  model and speech keys are Container Apps secrets.
+- **GitHub:** public repository with GitHub Actions CI (42 tests, frontend build, Docker build and container smoke
+  test).
 
-**Agents (Microsoft Agent Framework).** A workflow of specialised agents shares one blackboard:
-- *Stats agent* (deterministic): picks the moment and the grounded facts, so the AI can't invent numbers.
-- *Tactics agent*: explains why it matters (momentum, chaos, pressure, forecast).
-- *Narrator agent*: writes the live commentary line.
-- *Persona agent*: adapts tone, focus and language to the viewer.
-- *Recap agent*: writes the automated full-time report.
-- *Ask agent*: answers viewer questions with function calling over live match data.
-
-Each agent has a timeout and a deterministic fallback, and every narration carries a trace of which agent
-ran how, so the live feed never goes silent if a model call fails.
-
-**Microsoft technology**
-- Microsoft Agent Framework: agents and workflow orchestration.
-- Microsoft Foundry / Azure OpenAI: `gpt-4.1-mini` (Sweden Central) powers the tactics, narrator, persona and recap
-  agents; verified live in English, Turkish and Spanish with about 1 s per agent.
-- Azure Container Apps: single-container deployment (UI, API and WebSocket), image built in Azure Container
-  Registry, model key stored as a Container Apps secret. Live: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
-- GitHub: public repository with GitHub Actions CI (tests, frontend build, Docker build and smoke test).
-  **[TODO: mention GitHub Copilot only if you used it]**
-
-**Impact.** The same engine serves a studio analyst, a streaming overlay and a casual fan, in their own
-language, from one data feed. The overlay timeline and WebSocket protocol are designed to plug into a
-production graphics path.
+**Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
+language and style, from a single data feed, and the overlay timeline and WebSocket protocol are built to plug into
+a production graphics path.
 
 ## Links
 
-- Repo: https://github.com/Mertan2/insidethegame-match-intelligence
-- Demo: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
-- Video: **[TODO: YouTube/Vimeo URL]**
+- Live demo: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
+- Code (public): https://github.com/Mertan2/insidethegame-match-intelligence
+- Video (under 2:00): **[paste the YouTube/Vimeo URL after uploading demo/insidethegame_demo.mp4]**
 
-## Demo video script (≤ 2:00)
+## How to try it (testing instructions)
 
-No copyrighted music or third-party logos. Record at 1080p; use 4x–8x replay speed so key moments come quickly.
+1. Open the live demo, pick a language and casual or analyst mode, press **Kick off with live commentary**
+   (sound on; browsers only allow audio after that click).
+2. Switch **Analyst** to see each line's director brief, the "why" behind it and the agent trace.
+3. Open the **DATA** tab for the raw feed, live charts and tracking table.
+4. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
+5. Pick a player in **Follow a player** for the follow camera and player panel; press **Generate** for a recap.
 
-| Time | Screen | Voice-over |
-|---|---|---|
-| 0:00–0:12 | 2D + 3D views side by side, match running | "Live data tells you what happened. We built a system that tells you *why*, for every fan." |
-| 0:12–0:30 | 3D view zoomed on players, legs moving; toggle plugins on/off | "Everything starts from raw tracking: 22 players, the ball in 3D, even each player's feet. Analytics plugins derive deeper stats and can be switched on or off live." |
-| 0:30–0:52 | A shot: dashed forecast arc, "ON TARGET in 0.4s" overlay, then save or goal | "Our physics model forecasts the ball's flight. Here it called the shot on target before it arrived, accurate to about 15 centimetres." |
-| 0:52–1:15 | Analyst mode: narration with "why" bullets and agent trace | "A team of AI agents on Microsoft Agent Framework explains the moment: the stats agent grounds the facts, tactics explains why, the narrator writes the line." |
-| 1:15–1:35 | Switch to casual mode, Turkish, follow a player; camera follows, focus panel | "The persona agent tailors it: casual or analyst, any language, or follow one player all match." |
-| 1:35–1:50 | Click Generate recap at full time | "At full time the recap agent writes the match report automatically." |
-| 1:50–2:00 | Architecture slide or repo page | "Inside the Game: Agent Framework, Foundry and Azure Container Apps. Explainable match intelligence for every fan." |
+No login is needed.
 
 ## Before submitting
 
-- [x] `backend/.env` filled; `scripts/check_foundry.py` passes; translation shows in the UI
-- [x] Deployed on Azure Container Apps (check the URL once more in a private window before submitting)
-- [ ] Video recorded, under 2:00, uploaded as public/unlisted on YouTube or Vimeo
-- [ ] TODO markers above resolved
+- [x] Live app deployed on Azure Container Apps with the model and speech connected
+- [x] Public GitHub repository
+- [ ] Video uploaded to YouTube or Vimeo (Public or Unlisted) and its URL pasted above
+- [ ] Project created on Innovation Studio with the text above, category chosen, all three links added
 - [ ] Submitted by **Oct 27, 11:59 PM PT**
