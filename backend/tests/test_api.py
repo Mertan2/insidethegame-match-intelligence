@@ -50,4 +50,7 @@ def test_tts_reports_unconfigured_and_builds_ssml(client, monkeypatch):
     monkeypatch.setattr(main, "speech", None)
     assert client.post("/api/tts", json={"text": "Goal!"}).status_code == 503
     ssml = Speech.ssml("Gol & <kurtarış>", "tr", excited=True)
-    assert "tr-TR-AhmetNeural" in ssml and "&amp; &lt;kurtarış&gt;" in ssml and "+14%" in ssml
+    assert "tr-TR-AhmetNeural" in ssml and "&amp; &lt;kurtarış&gt;" in ssml and "+6%" in ssml
+    assert "rate='+0%'" in Speech.ssml("Quiet spell.", "tr", excited=False)  # routine lines at natural speed
+    hd = Speech.ssml("GOAL!", "en", excited=True)  # HD voice: pace and tone come from the text, no prosody
+    assert "DragonHD" in hd and "prosody" not in hd
