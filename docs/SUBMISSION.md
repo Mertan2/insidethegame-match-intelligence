@@ -61,7 +61,7 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
 - **Grounding.** Numbers come only from the deterministic stats layer; language-model agents phrase, explain and
   translate, and are told the score and what each goal did ("equaliser", "takes the lead") so they cannot invent it.
 - **Recovering from failure.** Every agent runs with a timeout and a deterministic template fallback; each narration
-  carries a trace of which agent ran, by which path and how long it took (visible in analyst mode), so one failing
+  carries a trace of which agent ran, by which path and how long it took (shown live in the Agent team panel and in analyst mode), so one failing
   model call never silences the broadcast.
 - **Observable in production.** Every narration, agent step (path, fallback, latency), Ask question, tool call and
   voice request is an OpenTelemetry span in Azure Application Insights, with the Azure OpenAI and Speech calls
@@ -94,10 +94,13 @@ a production graphics path.
 
 1. Open the live demo, pick a language and casual or analyst mode, press **Kick off with live commentary**
    (sound on; browsers only allow audio after that click).
-2. Switch **Analyst** to see each line's director brief, the "why" behind it and the agent trace.
-3. Open the **DATA** tab for the raw feed, live charts and tracking table.
-4. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
-5. Pick a player in **Follow a player** for the follow camera and player panel; press **Generate** for a recap.
+2. Watch the **Agent team · live** panel: each commentary line lights up its run through stats → tactics →
+   narrator → persona, with the path each agent took (rules, LLM, skipped, fallback) and its latency, plus running
+   totals and the tools the Ask agent just called.
+3. Switch **Analyst** to see each line's director brief, the "why" behind it and the agent trace.
+4. Open the **DATA** tab for the raw feed, live charts and tracking table.
+5. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
+6. Pick a player in **Follow a player** for the follow camera and player panel; press **Generate** for a recap.
 
 No login is needed.
 

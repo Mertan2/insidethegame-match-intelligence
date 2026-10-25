@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Ball3D } from "./components/Ball3D";
+import { AgentOps } from "./components/AgentOps";
 import { AskPanel } from "./components/AskPanel";
 import { CommentaryFeed } from "./components/CommentaryFeed";
 import { Controls } from "./components/Controls";
@@ -196,14 +197,7 @@ export default function App() {
         <section className="bottom">
           <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
           <RecapPanel matchId={meta.match_id} persona={persona} />
-          <div className="panel">
-            <h3>Agents</h3>
-            {state.agents.map((a) => (
-              <div key={a.name} className="agent">
-                <b>{a.name}</b> <span className="muted">{a.role}</span>
-              </div>
-            ))}
-          </div>
+          <AgentOps agents={state.agents} narrations={state.narrations} answers={state.answers} />
         </section>
       </main>
     </div>

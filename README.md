@@ -23,6 +23,9 @@ What to try:
   full-time recaps. Key moments always go first. In Analyst mode, each line shows the brief the narrator got.
 - **Live AI commentary:** every line is written by the agent team (labelled with the model), including
   "state of play" updates every two match minutes.
+- **Agent team · live:** the orchestration on screen. Each line lights up its run through stats → tactics →
+  narrator → persona with the path each agent took (rules, LLM, skipped, fallback) and its latency, running
+  totals per agent, and the tools the Ask agent called for the last question.
 
 ## Architecture
 
