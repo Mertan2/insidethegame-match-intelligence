@@ -44,7 +44,7 @@ class StatsPlugin(Plugin):
         self.teams = {"home": _team_template(), "away": _team_template()}
         self.players: dict[str, dict[str, float]] = defaultdict(
             lambda: {
-                "distance_m": 0.0, "top_speed_kmh": 0.0, "passes": 0, "passes_completed": 0, "shots": 0, "xg": 0.0,
+                "distance_m": 0.0, "sprint_m": 0.0, "top_speed_kmh": 0.0, "passes": 0, "passes_completed": 0, "shots": 0, "xg": 0.0,
                 "left_foot": 0, "right_foot": 0, "head": 0, "weak_foot": 0, "weak_foot_completed": 0,
             }
         )
@@ -158,6 +158,7 @@ class StatsPlugin(Plugin):
             prev = self._prev_pos.get(pid)
             self._prev_pos[pid] = pos
             window = self._speed_window[pid]
+            step = 0.0
             if prev is not None:
                 step = float(np.linalg.norm(pos - prev))
                 if step > max_step:  # repositioned for a restart, not running
@@ -169,6 +170,8 @@ class StatsPlugin(Plugin):
             if len(window) > 6:
                 window.pop(0)
                 speed = float(np.linalg.norm(window[-1] - window[0])) / (5 * state.dt) * 3.6
+                if speed >= SPRINT_KMH:
+                    self.players[pid]["sprint_m"] += step
                 if speed > self.players[pid]["top_speed_kmh"]:
                     self.players[pid]["top_speed_kmh"] = speed
                 minute = int(frame.t // 60)
@@ -220,6 +223,7 @@ class StatsPlugin(Plugin):
                 "name": state.player_name(pid),
                 "team": state.players[pid].team,
                 "distance_m": round(p["distance_m"]),
+                "sprint_m": round(p["sprint_m"]),
                 "top_speed_kmh": round(p["top_speed_kmh"], 1),
                 "passes": p["passes"],
                 "passes_completed": p["passes_completed"],

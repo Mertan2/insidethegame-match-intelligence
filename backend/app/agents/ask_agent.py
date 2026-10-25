@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .. import telemetry
+from ..plugins.stats import FATIGUE_BASELINE_MIN, FATIGUE_MIN_MINUTE
 from ..models import Event, MatchMeta
 from .base import Persona
 
@@ -127,6 +128,16 @@ def _top_players(ctx: LiveContext, metric: str = "distance_m", **_: Any) -> dict
     rows = (ctx.snapshots.get("stats") or {}).get("players", [])
     if not rows or metric not in rows[0]:
         return {"error": f"unknown metric '{metric}'", "metrics": sorted(rows[0].keys()) if rows else []}
+    if metric == "fatigue_pct" and all(r.get(metric) is None for r in rows):
+        # Fatigue compares recent sprints with a fresh-legs baseline, so early on (or in a short match) nobody
+        # can be judged yet. Say so, and give the workload so far, which is what tiring builds from.
+        workload = _top_players(ctx, "sprint_m")["top"]
+        return {"metric": metric, "measured": False,
+                "why": f"Fatigue (drop in top sprint speed against a player's first {FATIGUE_BASELINE_MIN} minutes) "
+                       f"is measured from minute {FATIGUE_MIN_MINUTE} of play; the match is at minute {int(ctx.t // 60)} "
+                       f"of {ctx.meta.minutes}.",
+                "workload_so_far": workload,
+                "workload_metric": "sprint_m: metres covered above 20 km/h, the effort fatigue builds from"}
     top = sorted(rows, key=lambda r: (r.get(metric) or 0), reverse=True)[:5]
     return {"metric": metric, "top": [{"name": r["name"], "team": ctx.meta.teams[r["team"]].short, metric: r.get(metric)} for r in top]}
 
@@ -142,7 +153,7 @@ TOOLS: dict[str, tuple[Callable[..., dict[str, Any]], dict[str, Any]]] = {
                                            "parameters": {"type": "object", "properties": {"minutes": {"type": "number"}, "type": {"type": "string", "description": "optional filter, e.g. 'shot' or 'goal'"}}}}),
     "get_ball_forecast": (_forecast, {"description": "Physics forecast of the ball in flight (landing point, goal-line crossing, on target) and its measured accuracy.",
                                       "parameters": {"type": "object", "properties": {}}}),
-    "get_top_players": (_top_players, {"description": "Top 5 players by a metric: distance_m, top_speed_kmh, passes_completed, shots, xg, headers, fatigue_pct.",
+    "get_top_players": (_top_players, {"description": "Top 5 players by a metric: distance_m, sprint_m (metres above 20 km/h), top_speed_kmh, passes_completed, shots, xg, headers, fatigue_pct (use for who is tiring).",
                                        "parameters": {"type": "object", "properties": {"metric": {"type": "string"}}, "required": ["metric"]}}),
 }
 
@@ -228,6 +239,12 @@ class AskAgent:
             return f"Possession: {h} {p['home']}%, {a} {p['away']}%."
         if "xg" in q or "chance" in q:
             return f"xG so far: {h} {s['xg']['home']}, {a} {s['xg']['away']}."
+        if any(w in q for w in ("tired", "tiring", "fatigue", "yorul")):
+            top = _top_players(ctx, "fatigue_pct")
+            if top.get("measured") is False:
+                rows = top["workload_so_far"][:3]
+                return top["why"] + " Most sprinting so far: " + ", ".join(f"{r['name']} ({r['sprint_m']} m)" for r in rows) + "."
+            return "Biggest drop in sprint speed: " + ", ".join(f"{r['name']} ({r['fatigue_pct']}%)" for r in top["top"][:3]) + "."
         if any(w in q for w in ("who", "best", "fastest", "most")):
             top = _top_players(ctx, "distance_m")["top"][:3]
             return "Most ground covered: " + ", ".join(f"{r['name']} ({r['distance_m']} m)" for r in top) + "."

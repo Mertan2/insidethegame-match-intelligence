@@ -65,3 +65,11 @@ def test_llm_answer_uses_tools(match):
 def test_falls_back_without_model(match):
     out = asyncio.run(AskAgent(BrokenLLM()).answer("who has the most possession?", _ctx(match), Persona()))
     assert out["path"].startswith("template") and "Possession" in out["answer"]
+
+
+def test_fatigue_question_early_explains_and_gives_workload(match):
+    ctx = _ctx(match)  # first few minutes: too early to judge anyone tired
+    out = run_tool(ctx, "get_top_players", {"metric": "fatigue_pct"})
+    assert out["measured"] is False and "minute 45" in out["why"]
+    assert len(out["workload_so_far"]) == 5 and out["workload_so_far"][0]["sprint_m"] > 0
+    assert "sprinting" in AskAgent(object())._template("who is tiring?", ctx)
