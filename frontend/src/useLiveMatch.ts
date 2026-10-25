@@ -139,16 +139,22 @@ export function useLiveMatch(matchId: string | null, initialPersona: Persona, in
     };
 
     let raf = 0;
-    const loop = () => {
+    const flush = () => {
       if (dirty.current) {
         dirty.current = false;
         setState(live.current);
       }
+    };
+    const loop = () => {
+      flush();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+    // Browsers pause animation frames in background or hidden views; keep state current there too.
+    const slow = setInterval(flush, 250);
     return () => {
       cancelAnimationFrame(raf);
+      clearInterval(slow);
       clearInterval(meter);
       socket.close();
     };

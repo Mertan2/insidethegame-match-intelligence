@@ -22,7 +22,7 @@ from agent_framework._tools import FunctionInvocationLayer
 class LLMClient(Protocol):
     available: bool
 
-    async def complete(self, system: str, prompt: str, max_tokens: int = 300) -> str: ...
+    async def complete(self, system: str, prompt: str, max_tokens: int = 300, json_mode: bool = False) -> str: ...
 
 
 class NullLLM:
@@ -30,7 +30,7 @@ class NullLLM:
 
     available = False
 
-    async def complete(self, system: str, prompt: str, max_tokens: int = 300) -> str:
+    async def complete(self, system: str, prompt: str, max_tokens: int = 300, json_mode: bool = False) -> str:
         raise RuntimeError("No LLM configured")
 
 
@@ -47,18 +47,23 @@ class FoundryLLM:
         self._client = httpx.AsyncClient(timeout=10.0)
         self._reasoning_model = False  # set once the deployment rejects max_tokens/temperature
 
-    def _body(self, system: str, prompt: str, max_tokens: int) -> dict[str, Any]:
+    def _body(self, system: str, prompt: str, max_tokens: int, json_mode: bool = False) -> dict[str, Any]:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
+        body: dict[str, Any] = {"messages": messages}
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}  # the model must return valid JSON
         if self._reasoning_model:
             # Reasoning models spend completion tokens on thinking first, so give them headroom.
-            return {"messages": messages, "max_completion_tokens": max_tokens * 8}
-        return {"messages": messages, "max_tokens": max_tokens, "temperature": 0.7}
+            return {**body, "max_completion_tokens": max_tokens * 8}
+        return {**body, "max_tokens": max_tokens, "temperature": 0.7}
 
-    async def complete(self, system: str, prompt: str, max_tokens: int = 300) -> str:
-        resp = await self._client.post(self.url, params=self.params, headers=self.headers, json=self._body(system, prompt, max_tokens))
+    async def complete(self, system: str, prompt: str, max_tokens: int = 300, json_mode: bool = False) -> str:
+        body = self._body(system, prompt, max_tokens, json_mode)
+        resp = await self._client.post(self.url, params=self.params, headers=self.headers, json=body)
         if resp.status_code == 400 and not self._reasoning_model and "unsupported" in resp.text.lower():
             self._reasoning_model = True
-            resp = await self._client.post(self.url, params=self.params, headers=self.headers, json=self._body(system, prompt, max_tokens))
+            body = self._body(system, prompt, max_tokens, json_mode)
+            resp = await self._client.post(self.url, params=self.params, headers=self.headers, json=body)
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"].get("content")
         if not content:
@@ -98,7 +103,8 @@ class LLMChatClient(FunctionInvocationLayer, BaseChatClient):
             raise NotImplementedError("LLMChatClient does not stream")
         system = [str(options.get("instructions") or "")] + [m.text for m in messages if m.role == "system"]
         prompt = "\n".join(m.text for m in messages if m.role != "system")
-        text = await self.llm.complete("\n".join(s for s in system if s), prompt, int(options.get("max_tokens") or 300))
+        extra = {"json_mode": True} if options.get("json_mode") else {}  # only JSON agents need the newer signature
+        text = await self.llm.complete("\n".join(s for s in system if s), prompt, int(options.get("max_tokens") or 300), **extra)
         return ChatResponse(messages=[Message(role="assistant", contents=[text])])
 
 

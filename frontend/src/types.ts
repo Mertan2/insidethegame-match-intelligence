@@ -218,3 +218,82 @@ export interface Recap {
   requested_language: string;
   path: string;
 }
+
+/** One step of a key moment: how the ball was won, a pass in the build-up, or the shot. */
+export interface MomentStep {
+  type: "regain" | "pass" | "shot";
+  t: number;
+  x: number;
+  y: number;
+  end_x?: number;
+  end_y?: number;
+  player_id?: string | null;
+  receiver_id?: string | null;
+  cause?: string | null;
+  key_pass?: boolean;
+  bypassed?: number;
+  length_m?: number;
+  progress_m?: number;
+  xg?: number;
+  speed_kmh?: number;
+  outcome?: "goal" | "saved" | "off_target";
+  distance_m?: number;
+  nearest_defender_id?: string | null;
+  nearest_defender_m?: number | null;
+  defenders_in_the_way?: number;
+  blocker_ids?: string[];
+  keeper?: { player_id: string; x: number; y: number; off_line_m: number } | null;
+}
+
+export interface Moment {
+  id: string;
+  t: number;
+  minute: number;
+  kind: "goal" | "save" | "miss";
+  team: Side;
+  player_id: string;
+  xg: number;
+  score_after: Record<Side, number>;
+  start: number;
+  clip_start: number;
+  end: number;
+  passes: number;
+  steps: MomentStep[];
+}
+
+export interface ReplayFrame {
+  t: number;
+  ball: [number, number, number];
+  players: [string, number, number][];
+  owner: string | null;
+  score: Record<Side, number>;
+}
+
+export interface Beat {
+  t: number;
+  type: MomentStep["type"];
+  text: string;
+}
+
+export type TraceStep = { agent: string; path?: string; status?: string; ms?: number; llm_error?: string; clip?: number };
+
+/** One replay: a moment, the explainer's beats over it, and the tracking to draw. */
+export interface ReplayItem {
+  moment: Moment;
+  beats: Beat[];
+  headline: string;
+  verdict: string;
+  language: string;
+  trace: TraceStep[];
+  frames: ReplayFrame[];
+}
+
+/** What the replay theatre plays: one explained moment, or a highlights package. */
+export interface Program {
+  kind: "explain" | "reel";
+  intro?: string;
+  outro?: string;
+  language: string;
+  items: ReplayItem[];
+  trace: TraceStep[];
+}

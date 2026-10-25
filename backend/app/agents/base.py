@@ -62,11 +62,11 @@ class Agent(ABC):
                 client=LLMChatClient(llm), name=self.name, description=self.role, instructions=self.instructions
             )
 
-    async def ask(self, prompt: str, max_tokens: int) -> str:
-        """One stateless turn on this agent's Agent Framework agent."""
+    async def ask(self, prompt: str, max_tokens: int, json_mode: bool = False) -> str:
+        """One stateless turn on this agent's Agent Framework agent (json_mode: reply must be a JSON object)."""
         if self.agent is None:
             raise RuntimeError("No LLM configured")
-        resp = await self.agent.run(prompt, options={"max_tokens": max_tokens})
+        resp = await self.agent.run(prompt, options={"max_tokens": max_tokens, "json_mode": json_mode})
         text = resp.text.strip()
         if not text:
             raise ValueError("Empty agent response")

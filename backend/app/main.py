@@ -11,6 +11,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -18,9 +19,11 @@ from pydantic import BaseModel, Field
 from . import telemetry
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
+from .agents.explain_agent import explain, highlights
 from .commentary import CommentaryScheduler
 from .speech import VOICES, get_speech
 from .models import Match
+from .moments import find_moments, frames_between, pick_highlights
 from .pipeline import LivePipeline
 from .plugins import describe_plugins
 from .replay import ReplayEngine
@@ -49,6 +52,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Inside the Game - Match Intelligence", lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=2048)  # replay frames for highlights are ~0.5 MB of JSON
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -165,6 +169,61 @@ async def recap(
         insights, snapshots = await asyncio.to_thread(_full_pass, match)
         _recap_cache[key] = await Orchestrator(match.meta, llm).recap(insights, snapshots, match.meta.final_score, persona)
     return _recap_cache[key]
+
+
+_moments_cache: dict[str, list[dict]] = {}
+_explain_cache: dict[tuple, dict] = {}
+
+
+def _moments(match: Match) -> list[dict]:
+    if match.meta.match_id not in _moments_cache:
+        _moments_cache[match.meta.match_id] = find_moments(match)
+    return _moments_cache[match.meta.match_id]
+
+
+@app.get("/api/matches/{match_id}/moments")
+def moments(match_id: str, upto: float | None = None) -> list[dict]:
+    """Every shot with its build-up and shot context; `upto` hides what hasn't happened yet."""
+    return [m for m in _moments(_match(match_id)) if upto is None or m["t"] <= upto]
+
+
+@app.get("/api/matches/{match_id}/moments/{moment_id}/explain")
+async def explain_moment(match_id: str, moment_id: str, mode: str = "casual", lang: str = "en") -> dict:
+    """The explainer agent breaks one moment down into beats for the replay telestrator."""
+    match = _match(match_id)
+    moment = next((m for m in _moments(match) if m["id"] == moment_id), None)
+    if moment is None:
+        raise HTTPException(404, f"Unknown moment {moment_id}")
+    persona = Persona(mode=mode, language=lang)
+    key = ("explain", match_id, moment_id, persona.model_dump_json())
+    if key not in _explain_cache:
+        with telemetry.span("explain", **{"moment.id": moment_id, "moment.kind": moment["kind"]}):
+            out = await explain(llm, match.meta, moment, persona, "full")
+        out["frames"] = frames_between(match, moment["start"], moment["end"])
+        _explain_cache[key] = out
+    return _explain_cache[key]
+
+
+@app.get("/api/matches/{match_id}/highlights")
+async def highlights_reel(match_id: str, upto: float | None = None, mode: str = "casual", lang: str = "en") -> dict:
+    """Automated highlights package: the producer picks the clips, one explainer per clip runs in
+    parallel, then the producer writes the intro and outro. `upto` = highlights so far (live)."""
+    match = _match(match_id)
+    end_t = match.frames[-1].t
+    finished = upto is None or upto >= end_t
+    upto_t = end_t if finished else float(upto)
+    clips = pick_highlights(_moments(match), upto_t)
+    persona = Persona(mode=mode, language=lang)
+    key = ("reel", match_id, tuple(c["id"] for c in clips), finished, persona.model_dump_json())
+    if key not in _explain_cache:
+        frame = match.frames[min(len(match.frames) - 1, int(upto_t * match.meta.fps))]
+        with telemetry.span("highlights", **{"clips": len(clips), "finished": finished}):
+            out = await highlights(llm, match.meta, clips, dict(frame.score), int(upto_t // 60), finished, persona)
+        for item in out["items"]:
+            m = item["moment"]
+            item["frames"] = frames_between(match, m["clip_start"], m["end"])
+        _explain_cache[key] = out
+    return _explain_cache[key]
 
 
 @app.websocket("/ws/live/{match_id}")

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Ball3D } from "./components/Ball3D";
 import { AgentOps } from "./components/AgentOps";
 import { AskPanel } from "./components/AskPanel";
@@ -7,12 +7,14 @@ import { Controls } from "./components/Controls";
 import { DataView } from "./components/DataView";
 import { Kickoff } from "./components/Kickoff";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
+import { MomentsBar } from "./components/MomentsBar";
 import { OverlayLayer } from "./components/OverlayLayer";
 import { Pitch2D } from "./components/Pitch2D";
 import { PlayerFocus } from "./components/PlayerFocus";
 import { RecapPanel } from "./components/RecapPanel";
+import { ReplayTheater } from "./components/ReplayTheater";
 import { StatsPanel } from "./components/StatsPanel";
-import type { Persona } from "./types";
+import type { Moment, Persona, Program, ReplayItem, TraceStep } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
 import { useVoice } from "./useVoice";
 
@@ -46,7 +48,22 @@ export default function App() {
       });
   }, []);
 
-  const { speak, speaking } = useVoice(voiceOn);
+  const [moments, setMoments] = useState<Moment[]>([]);
+  const [program, setProgram] = useState<Program | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const resumeAfterReplay = useRef(false);
+
+  useEffect(() => {
+    setMoments([]);
+    if (!matchId) return;
+    fetch(`/api/matches/${matchId}/moments`)
+      .then((r) => r.json())
+      .then(setMoments)
+      .catch(() => setMoments([]));
+  }, [matchId]);
+
+  // Live commentary stays quiet while a replay is on.
+  const { speak, speaking } = useVoice(voiceOn && program === null);
   const latestNarration = state.narrations[0];
   const latestAnswer = state.answers[0];
   // Speak each new AI commentary line and each answer as it arrives.
@@ -58,6 +75,40 @@ export default function App() {
     if (latestAnswer) speak(latestAnswer.answer, persona.language, "answer");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestAnswer]);
+
+  /** Pause the live feed, ask the agents for a replay, then open the theatre. */
+  const openReplay = async <T,>(label: string, url: string, toProgram: (data: T) => Program) => {
+    setBusy(label);
+    resumeAfterReplay.current = !state.paused && !state.ended;
+    send({ type: "control", action: "pause" });
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(String(res.status));
+      setProgram(toProgram((await res.json()) as T));
+    } catch {
+      if (resumeAfterReplay.current) send({ type: "control", action: "play" });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const query = `mode=${persona.mode}&lang=${persona.language}`;
+  const explainMoment = (m: Moment) =>
+    openReplay("The explainer agent is breaking it down…", `/api/matches/${matchId}/moments/${m.id}/explain?${query}`, (r: ReplayItem) => ({
+      kind: "explain",
+      language: r.language,
+      items: [r],
+      trace: r.trace,
+    }));
+  const highlightsSoFar = () =>
+    openReplay(
+      "Producer is picking the clips · explainers writing in parallel…",
+      `/api/matches/${matchId}/highlights?${query}${state.ended ? "" : `&upto=${state.frame?.t ?? 0}`}`,
+      (r: { intro: string; outro: string; items: ReplayItem[]; trace: TraceStep[]; language: string }) => ({ kind: "reel", ...r }),
+    );
+  const closeReplay = () => {
+    setProgram(null);
+    if (resumeAfterReplay.current) send({ type: "control", action: "play" });
+  };
 
   const updatePersona = (patch: Partial<Persona>) => {
     const next = { ...persona, ...patch };
@@ -145,6 +196,24 @@ export default function App() {
         enabled={state.enabled}
         onPlugins={(enabled) => send({ type: "plugins", enabled })}
       />
+
+      <MomentsBar
+        meta={meta}
+        moments={moments}
+        now={frame?.t ?? 0}
+        ended={state.ended}
+        busy={busy}
+        onExplain={explainMoment}
+        onHighlights={highlightsSoFar}
+      />
+      {busy && (
+        <div className="agent-busy">
+          <span className="spinner" /> {busy}
+        </div>
+      )}
+      {program && (
+        <ReplayTheater meta={meta} program={program} voice={voiceAvailable && voiceOn} language={persona.language} onClose={closeReplay} />
+      )}
 
       <main>
         {view === "data" && (
