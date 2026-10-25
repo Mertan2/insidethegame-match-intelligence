@@ -45,8 +45,9 @@ clock.
 **The pipeline (the brief's five stages).**
 1. **Ingest:** an agent-based simulator produces football-realistic data (22 players and the ball in 3D at 10 Hz,
    left/right foot positions, headers, crosses, fatigue, a full event stream), replayed like a live feed.
-2. **Interpret:** toggleable analytics plugins: possession, xG, pass difficulty (incl. weak-foot use), ball and shot
-   speed, sprint tags, momentum, a control-vs-chaos index, fatigue from tracking alone.
+2. **Interpret:** toggleable analytics plugins: possession, xG, pass quality (distance, accuracy, difficulty
+   rating), ball and shot speed, player tags at sprint and distance thresholds, momentum, a control-vs-chaos index,
+   fatigue from tracking alone, and the key moments (build-up, key pass, shot context) behind every shot.
 3. **Explain:** a physics ball-flight forecast (gravity, drag, spin, bounce) predicts landing points and goal-line
    crossings and is scored against reality (about 0.1–0.2 m error one second ahead); the agents explain why each
    moment matters.
@@ -55,6 +56,31 @@ clock.
    live charts and a 22-player tracking table.
 5. **Personalise:** casual vs analyst, favourite club, a player-focus mode (camera, stats and commentary follow one
    player), 7 languages, spoken by neural voices.
+
+**Brief coverage, item by item.**
+- **(ii) Real-time match intelligence.** *Player identification:* live name tags on the pitch, triggered when a
+  player passes a sprint threshold (25 km/h, with the speed) or a distance threshold (each kilometre covered).
+  *Pass quality:* every pass gets distance, outcome/accuracy and a difficulty rating (length, pressure, weak foot,
+  progression). *Speed metrics:* live ball speed and every shot's speed, with the fastest shot of the match called.
+  *Auto-eventing:* speed, distance, sprints, fatigue and ball speed are computed from the raw tracking stream, not
+  from tagged events, so a tracking model's output can drive them with no manual tagging; there is no video in the
+  synthetic data, so no vision model.
+- **(iii) Narrative generation.** Play-by-play, fun facts (longest move, fastest shot, braces, headers, weak-foot
+  goals, distance milestones), player-performance context in the player-focus mode, running, half-time and
+  full-time recaps, and a narrated highlights package.
+- **(iv) Explainability.** A control-vs-chaos index and momentum (game rhythm), pressure and tactical-pressure
+  changes in the tactics agent's "why", and the telestrated explain-this-moment replay (how the ball was won, which
+  pass took defenders out, the space at the shot, the verdict).
+- **(v) Data innovation.** Our own synthetic generator: 22 players and the ball in 3D at 10 Hz with left/right
+  foot positions from a gait model, preferred and weak feet, headers and crosses, fatigue that slows sprints, plus
+  the full event stream (passes, shots, tackles, possession changes, pressure events, restarts, match metadata).
+  Any seed and length; a 90-minute match in about 25 s.
+- **(vi) Multi-language storytelling.** Commentary, answers, explanations and highlights in 7 languages (en, tr,
+  es, fr, de, pt, ar), spoken by a neural voice in each.
+- **Overlays for a rendering partner.** `GET /api/matches/{id}/overlays` returns the timed, machine-readable cue
+  timeline (`t_in`, `t_out`, slot, template, data) to synchronise graphics with the live feed.
+- **Personalisation.** Fan / Broadcaster / Analyst modes, casual vs tactical style, favourite club, favourite player
+  with a player-focused mode (camera, stats and commentary follow one player), and language.
 
 **Multi-agent orchestration (Microsoft Agent Framework).**
 - **Distinct roles.** A deterministic *broadcast director* watches every event and frame and writes briefs

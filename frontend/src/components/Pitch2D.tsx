@@ -87,7 +87,7 @@ export function Pitch2D({ meta, frame, forecast, speed, favoritePlayer }: Props)
       ctx.fillText(String(p.number), X(x), Y(y) + 0.5);
       const tag = tagged.get(id);
       if (tag || id === favoritePlayer) {
-        const label = tag ? `${p.name} · ${tag.speed_kmh} km/h` : p.name;
+        const label = tag ? `${p.name} · ${tag.distance_km != null ? `${tag.distance_km} km covered` : `${tag.speed_kmh} km/h`}` : p.name;
         ctx.font = `${1.5 * s}px system-ui`;
         const tw = ctx.measureText(label).width + 8 * dpr;
         ctx.fillStyle = "rgba(10,16,24,0.8)";

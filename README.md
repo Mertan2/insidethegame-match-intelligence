@@ -97,6 +97,21 @@ which agent ran, by which path and how long it took. Everything runs in one Azur
 latency), Ask question, tool call and voice request is an OpenTelemetry span in Azure Application Insights, with
 the Azure OpenAI and Speech calls as child dependencies (`app/telemetry.py`). Unset, tracing is off.
 
+### The brief, item by item
+
+| Brief asks for | Where it is |
+|---|---|
+| Ingest live synthetic events and metadata | Replay engine paces stored frames and events like a live feed (`WS /ws/live`) |
+| Player identification: name tags, speed/distance thresholds | `speed_metrics`: tags at 25 km/h sprints and at each kilometre covered, drawn on the pitch |
+| Pass quality: distance, accuracy, difficulty rating | `pass_quality` plugin (length, pressure, weak foot, progression) |
+| Speed metrics: ball speed, shot speed | `speed_metrics`: live ball speed, every shot's speed, fastest shot called |
+| Auto-eventing | Speed, distance, sprints, fatigue and ball speed computed from raw tracking, not tagged events (no video in the data) |
+| Narrative generation: narratives, player context, milestones, recaps | Director briefs → agent chain; player-focus mode; half/full-time recaps; highlights package |
+| Explainability: control vs chaos, pressure changes, rhythm | `momentum` plugin (chaos index, swings), tactics agent, explain-this-moment telestration |
+| Render: on-screen, timed machine-readable overlays | 2D/3D views, replay theatre, `GET /api/matches/{id}/overlays` cue timeline |
+| Personalise: modes, favourite club/player, player-focused mode, language | Fan / Broadcaster / Analyst, casual/tactical, favourites, follow-a-player camera, 7 languages voiced |
+| Data innovation | Own generator: 3D ball, foot positions, headers, fatigue, full event stream, any seed/length |
+
 Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins, key moments) → **explain**
 (tactics and explainer agents, telestrated replays) → **render** (2D/3D, broadcast cues, replay theatre, highlights)
 → **personalize** (persona agent and Fan / Broadcaster / Analyst modes: style, favourite club/player, language).

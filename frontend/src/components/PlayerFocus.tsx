@@ -20,7 +20,7 @@ export function PlayerFocus({ meta, playerId, plugins, narrations }: Props) {
     <div className="panel focus" style={{ borderColor: team.color }}>
       <h3>
         Player focus
-        {tag && <span className="chip hot">sprinting {tag.speed_kmh} km/h</span>}
+        {tag && <span className="chip hot">{tag.distance_km != null ? `${tag.distance_km} km covered` : `sprinting ${tag.speed_kmh} km/h`}</span>}
       </h3>
       <div className="focus-name">
         <span className="focus-number" style={{ background: team.color }}>

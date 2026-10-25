@@ -1,4 +1,4 @@
-"""Ball speed, shot speed and player name tags triggered by sprint thresholds."""
+"""Ball speed, shot speed and player name tags triggered by sprint and distance thresholds."""
 
 from __future__ import annotations
 
@@ -14,11 +14,13 @@ TAG_COOLDOWN_S = 20.0
 TAG_VISIBLE_S = 3.0
 MAX_PLAYER_KMH = 45.0
 MAX_BALL_KMH = 200.0
+DISTANCE_STEP_M = 1000.0  # a distance tag each time a player passes another kilometre
+MAX_STEP_M = 12.0  # per-frame movement above this is a restart reposition, not running
 
 
 class SpeedMetricsPlugin(Plugin):
     name = "speed_metrics"
-    description = "Live ball speed, shot speed, and player tags when sprint thresholds are hit"
+    description = "Live ball speed, shot speed, and player tags when sprint or distance thresholds are hit"
 
     def reset(self, state: MatchState) -> None:
         self.max_shot_kmh = 0.0
@@ -26,6 +28,9 @@ class SpeedMetricsPlugin(Plugin):
         self.tags: list[dict[str, Any]] = []
         self._tag_cooldown: dict[str, float] = {}
         self._ball_kmh = 0.0
+        self._distance: dict[str, float] = {}
+        self._prev: dict[str, tuple[float, float]] = {}
+        self._next_km: dict[str, float] = {}
 
     def on_event(self, event: Event, state: MatchState) -> list[Insight]:
         if event.type != "shot":
@@ -57,6 +62,20 @@ class SpeedMetricsPlugin(Plugin):
             kmh = float(np.linalg.norm(track[1] - track[0])) / state.dt * 3.6
             if kmh <= MAX_BALL_KMH:  # larger jumps are the ball being placed for a restart
                 self._ball_kmh = kmh
+
+        for pid, x, y in frame.players:
+            prev = self._prev.get(pid)
+            self._prev[pid] = (x, y)
+            if prev is None:
+                continue
+            step = float(np.hypot(x - prev[0], y - prev[1]))
+            if step > MAX_STEP_M:
+                continue
+            total = self._distance.get(pid, 0.0) + step
+            self._distance[pid] = total
+            if total >= self._next_km.get(pid, DISTANCE_STEP_M):
+                self._next_km[pid] = self._next_km.get(pid, DISTANCE_STEP_M) + DISTANCE_STEP_M
+                self.tags.append({"t": frame.t, "player_id": pid, "name": state.player_name(pid), "distance_km": round(total / 1000, 1)})
 
         hist = list(state.history)
         if len(hist) >= 6:

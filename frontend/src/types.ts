@@ -130,7 +130,7 @@ export interface SpeedPayload {
   ball_speed_kmh: number;
   max_shot_kmh: number;
   last_shot: { t: number; player: string; speed_kmh: number } | null;
-  tags: { t: number; player_id: string; name: string; speed_kmh: number }[];
+  tags: { t: number; player_id: string; name: string; speed_kmh?: number; distance_km?: number }[];
 }
 
 export interface PassRecord {
