@@ -172,6 +172,8 @@ async def recap(
 
 
 _moments_cache: dict[str, list[dict]] = {}
+_narration_cache: dict[tuple, dict] = {}
+NARRATION_CACHE_SIZE = 5000
 _explain_cache: dict[tuple, dict] = {}
 
 
@@ -272,9 +274,19 @@ async def live(
     )
 
     async def narrate(t: float, score: dict, insights: list, snapshots: dict, p: Persona) -> None:
-        out = await orchestrator.narrate(t, score, insights, snapshots, p)
+        # Replays are deterministic, so the same moment for the same persona reads the same for every
+        # viewer: reuse the line (and, through the speech cache, its audio) instead of regenerating it.
+        key = (match_id, round(insights[0].t, 1), insights[0].kind, insights[0].headline, p.model_dump_json())
+        out = _narration_cache.get(key)
+        cached = out is not None
+        if out is None:
+            out = await orchestrator.narrate(t, score, insights, snapshots, p)
+            if out is not None and all(s.get("status", "ok") == "ok" for s in out.get("trace", [])):
+                _narration_cache[key] = out
+                if len(_narration_cache) > NARRATION_CACHE_SIZE:
+                    _narration_cache.pop(next(iter(_narration_cache)))
         if out is not None:
-            await send({"type": "narration", **out})
+            await send({"type": "narration", **out, "cached": cached})
 
     async def receiver() -> None:
         nonlocal persona
