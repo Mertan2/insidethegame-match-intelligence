@@ -1,7 +1,8 @@
 """Spoken commentary with Azure AI Speech neural voices (text-to-speech REST API).
 
-One commentator voice per language; goals and big moments are read faster and
-higher. Results are cached, since the same line is often requested more than once.
+English uses a Dragon HD voice (natural pacing and emotion inferred from the text, so it needs
+no prosody tweaks); other languages use the locale's neural commentator voice, lifted slightly
+for goals and big moments. Results are cached, since the same line is often requested more than once.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from xml.sax.saxutils import escape
 import httpx
 
 VOICES = {
-    "en": ("en-GB", "en-GB-RyanNeural"),
+    "en": ("en-GB", "en-GB-Ollie:DragonHDLatestNeural"),
     "tr": ("tr-TR", "tr-TR-AhmetNeural"),
     "es": ("es-ES", "es-ES-AlvaroNeural"),
     "fr": ("fr-FR", "fr-FR-HenriNeural"),
@@ -41,8 +42,10 @@ class Speech:
     @staticmethod
     def ssml(text: str, lang: str, excited: bool) -> str:
         locale, voice = VOICES.get(lang, VOICES["en"])
-        rate, pitch = ("+14%", "+6%") if excited else ("+6%", "+0%")
         body = escape(text.strip()[:MAX_CHARS])
+        if "DragonHD" in voice:  # HD voices pick tone and pace from the text itself
+            return f"<speak version='1.0' xml:lang='{locale}'><voice name='{voice}'>{body}</voice></speak>"
+        rate, pitch = ("+6%", "+4%") if excited else ("+0%", "+0%")
         return (f"<speak version='1.0' xml:lang='{locale}'><voice name='{voice}'>"
                 f"<prosody rate='{rate}' pitch='{pitch}'>{body}</prosody></voice></speak>")
 

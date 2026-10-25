@@ -68,12 +68,14 @@ export default function App() {
   }, [matchId]);
 
   // Live commentary stays quiet while a replay is on.
-  const { speak, speaking } = useVoice(voiceOn && program === null);
+  const { speak, speaking, stop: stopVoice } = useVoice(voiceOn && program === null);
   const latestNarration = state.narrations[0];
   const latestAnswer = state.answers[0];
   // Speak each new AI commentary line and each answer as it arrives.
   useEffect(() => {
-    if (latestNarration) speak(latestNarration.text, latestNarration.language, latestNarration.kind);
+    // Above 2x the play outruns any voice: only key moments are spoken then.
+    const key = ["goal", "big_chance", "half_time_recap", "full_time_recap"].includes(latestNarration?.kind ?? "");
+    if (latestNarration && (state.speed <= 2 || key)) speak(latestNarration.text, latestNarration.language, latestNarration.kind);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestNarration]);
   useEffect(() => {
@@ -128,7 +130,10 @@ export default function App() {
   };
 
   const control = (msg: { action?: string; t?: number; speed?: number }) => {
-    if (msg.action === "seek") clearNarrations();
+    if (msg.action === "seek") {
+      clearNarrations();
+      stopVoice();
+    }
     send({ type: "control", ...msg });
   };
 
