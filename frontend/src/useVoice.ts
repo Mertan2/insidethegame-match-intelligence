@@ -101,8 +101,18 @@ export function useVoice(enabled: boolean) {
   const stop = useCallback(() => {
     generation.current += 1;
     queue.current = [];
-    audio.current?.pause();
-    finish.current?.();
+    const a = audio.current;
+    const done = finish.current;
+    if (!a) return;
+    // A quick fade instead of cutting mid-word.
+    const fade = setInterval(() => {
+      a.volume = Math.max(0, a.volume - 0.2);
+      if (a.volume <= 0.01) {
+        clearInterval(fade);
+        a.pause();
+        done?.();
+      }
+    }, 50);
   }, []);
 
   useEffect(() => {
