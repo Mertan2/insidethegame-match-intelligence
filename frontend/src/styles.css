@@ -346,3 +346,43 @@ header { background: linear-gradient(180deg, #0f1724, #0a0f17); }
 .ft-prompt { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 14px;
   background: #151b2b; border: 1px solid #ffe65a; border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 40px rgba(0,0,0,.6); animation: cap-in .4s ease-out; }
 .ft-close { background: none; border: none; color: var(--muted); }
+
+/* Phones */
+@media (max-width: 640px) {
+  .kickoff { align-items: flex-start; overflow-y: auto; padding: 16px; }
+  .kickoff-card { padding: 18px 14px; }
+  .kickoff-card h1 { font-size: 22px; gap: 6px; }
+  .kickoff-card p { font-size: 14px; }
+  .kickoff-options { margin: 12px 0; }
+  .audience-cards { gap: 8px; margin-bottom: 14px; }
+  .audience-card { flex-direction: row; text-align: left; align-items: center; gap: 10px; padding: 10px 12px; }
+  .audience-card > span:last-child { display: none; }
+  .audience-icon { font-size: 22px; }
+  .kickoff-go { width: 100%; font-size: 17px; padding: 12px 16px; }
+
+  header { gap: 8px; padding: 8px 12px; }
+  .brand { display: none; }
+  .scoreboard { font-size: 14px; gap: 8px; flex-wrap: wrap; width: 100%; }
+  .scoreboard .score { font-size: 18px; white-space: nowrap; }
+  .audience-switch { width: 100%; }
+  .audience-switch button { flex: 1; padding: 6px 4px; font-size: 13px; }
+  .header-right { width: 100%; justify-content: space-between; }
+  .toolbar { padding: 0 0 8px 0; }
+  .toolbar .view-switch { margin-left: 12px; }
+  .seek { width: 140px; }
+
+  .moments-bar { flex-wrap: wrap; padding: 8px 12px 0; gap: 8px; }
+  .moments-label { display: none; }
+  .moments-track { flex: 1 1 100%; }
+  .highlights-btn { width: 100%; }
+  .moment-pin { width: 22px; height: 22px; font-size: 11px; }
+  .moment-pin.goal { width: 26px; height: 26px; font-size: 13px; }
+
+  .theater { padding: 10px; }
+  .theater-agents { display: none; }
+  .theater-title b { font-size: 15px; }
+  .theater-caption { font-size: 14px; padding: 8px 10px; left: 2%; right: 2%; }
+  .theater-card { padding: 14px; }
+  .theater-card-player { font-size: 16px; }
+  .ft-prompt { left: 12px; right: 12px; transform: none; flex-wrap: wrap; }
+}

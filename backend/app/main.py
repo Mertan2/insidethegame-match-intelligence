@@ -9,14 +9,14 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import telemetry
+from . import ratelimit, telemetry
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
 from .agents.explain_agent import explain, highlights
@@ -87,8 +87,9 @@ class TTSRequest(BaseModel):
 
 
 @app.post("/api/tts")
-async def tts(req: TTSRequest) -> Response:
+async def tts(req: TTSRequest, request: Request) -> Response:
     """Spoken commentary: Azure AI Speech neural voice for the requested language, as MP3."""
+    ratelimit.check(request, "tts")
     if speech is None:
         raise HTTPException(503, "Speech not configured")
     if req.lang not in VOICES:
@@ -156,12 +157,14 @@ async def overlays(match_id: str) -> dict:
 
 @app.get("/api/matches/{match_id}/recap")
 async def recap(
+    request: Request,
     match_id: str,
     mode: str = "casual",
     lang: str = "en",
     favorite_team: str | None = None,
     favorite_player: str | None = None,
 ) -> dict:
+    ratelimit.check(request, "ai")
     match = _match(match_id)
     persona = Persona(mode=mode, language=lang, favorite_team=favorite_team, favorite_player=favorite_player)
     key = (match_id, persona.model_dump_json())
@@ -190,8 +193,9 @@ def moments(match_id: str, upto: float | None = None) -> list[dict]:
 
 
 @app.get("/api/matches/{match_id}/moments/{moment_id}/explain")
-async def explain_moment(match_id: str, moment_id: str, mode: str = "casual", lang: str = "en") -> dict:
+async def explain_moment(request: Request, match_id: str, moment_id: str, mode: str = "casual", lang: str = "en") -> dict:
     """The explainer agent breaks one moment down into beats for the replay telestrator."""
+    ratelimit.check(request, "ai")
     match = _match(match_id)
     moment = next((m for m in _moments(match) if m["id"] == moment_id), None)
     if moment is None:
@@ -207,9 +211,10 @@ async def explain_moment(match_id: str, moment_id: str, mode: str = "casual", la
 
 
 @app.get("/api/matches/{match_id}/highlights")
-async def highlights_reel(match_id: str, upto: float | None = None, mode: str = "casual", lang: str = "en") -> dict:
+async def highlights_reel(request: Request, match_id: str, upto: float | None = None, mode: str = "casual", lang: str = "en") -> dict:
     """Automated highlights package: the producer picks the clips, one explainer per clip runs in
     parallel, then the producer writes the intro and outro. `upto` = highlights so far (live)."""
+    ratelimit.check(request, "ai")
     match = _match(match_id)
     end_t = match.frames[-1].t
     finished = upto is None or upto >= end_t
@@ -312,7 +317,10 @@ async def live(
                 await send({"type": "persona_ack", "persona": persona.model_dump()})
             elif kind == "ask":
                 question = str(msg.get("question", "")).strip()[:300]
-                if question:
+                if question and not ratelimit.allow(ratelimit.client_ip(ws), "ask"):
+                    await send({"type": "answer", "question": question, "answer": "Too many questions in a minute; try again shortly.",
+                                "tools": [], "path": "rate_limited", "clock": "", "ms": 0})
+                elif question:
                     task = asyncio.create_task(answer(question, persona))
                     narration_tasks.add(task)
                     task.add_done_callback(narration_tasks.discard)

@@ -97,3 +97,13 @@ def test_highlights_fan_out_one_explainer_per_clip_then_the_producer(long_match)
         # Short clips only narrate steps inside the clip.
         assert all(b["t"] >= item["moment"]["clip_start"] or b["type"] == "shot" for b in item["beats"])
         assert choose_beats(item["moment"], "short", item["moment"]["clip_start"])
+
+
+def test_rate_limit_window():
+    from app import ratelimit
+
+    ip = "203.0.113.9"
+    assert all(ratelimit.allow(ip, "ask", now=100.0) for _ in range(ratelimit.LIMITS["ask"]))
+    assert not ratelimit.allow(ip, "ask", now=100.5)
+    assert ratelimit.allow(ip, "ask", now=161.0)  # window has passed
+    assert ratelimit.allow("198.51.100.1", "ask", now=100.5)  # other clients unaffected
