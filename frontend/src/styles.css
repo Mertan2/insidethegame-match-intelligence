@@ -339,3 +339,10 @@ header { background: linear-gradient(180deg, #0f1724, #0a0f17); }
 .audience-icon { font-size: 26px; }
 .audience-card.active { border-color: #8b6cff; background: linear-gradient(180deg, #221c40, #151b2b); box-shadow: 0 0 0 1px #8b6cff inset; }
 @media (max-width: 640px) { .audience-cards { grid-template-columns: 1fr; } }
+
+.explain-btn { margin-top: 6px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 8px; border: 1px solid #ffe65a;
+  background: rgba(255, 230, 90, 0.1); color: #ffe65a; }
+.explain-btn:hover { background: rgba(255, 230, 90, 0.2); }
+.ft-prompt { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 14px;
+  background: #151b2b; border: 1px solid #ffe65a; border-radius: 12px; padding: 10px 14px; box-shadow: 0 10px 40px rgba(0,0,0,.6); animation: cap-in .4s ease-out; }
+.ft-close { background: none; border: none; color: var(--muted); }

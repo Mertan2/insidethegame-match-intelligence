@@ -7,7 +7,8 @@ import json
 from .base import Agent, Blackboard
 
 SYSTEM = (
-    "You are a football tactics analyst. Explain in at most two sentences why the moment matters. "
+    "You are a football tactics analyst. Explain in one or two short sentences (max 30 words in total) why the "
+    "moment matters, with at most two numbers. It is read out live, so be punchy. "
     "Use only the numbers provided. No invented facts. "
     "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )

@@ -7,6 +7,13 @@ forecast, and a multi-agent narrator that writes for each viewer.
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 
+![Broadcaster view: live pitch, key moments timeline, AI commentary with the agent trace](docs/img/live-broadcaster.jpg)
+
+| Explain this moment: telestrated replay, analyst voice | AI highlights: producer + explainers in parallel |
+|---|---|
+| ![Explain this moment](docs/img/explain-3.jpg) | ![Highlights reel clip](docs/img/reel-clip.jpg) |
+| ![Who's watching: Fan, Broadcaster, Analyst](docs/img/kickoff.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
+
 What to try:
 - **Explain this moment:** every shot and goal lands on the key moments timeline. Click one and the explainer agent
   replays it like a TV analyst at the telestrator: the move is drawn from tracking (how the ball was won, the passes,

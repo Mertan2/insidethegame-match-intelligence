@@ -9,7 +9,8 @@ from .base import Agent, Blackboard
 SYSTEM = (
     "You adapt football commentary for a specific viewer. Rewrite the text for the given persona "
     "and translate it into the target language. Keep every number unchanged. Return only the text. "
-    "Casual mode: at most two short sentences, plain words. Analyst mode: keep the key numbers. "
+    "Casual mode: at most two short sentences, plain words. Analyst mode: at most three short sentences "
+    "(about 45 words), the commentary line first, then the key reason with at most two numbers. "
     "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
@@ -34,7 +35,13 @@ class PersonaAgent(Agent):
                 text += " " + why.split(". ")[0].rstrip(".") + "."
             return text, []
         facts = [f"{k.replace('_', ' ')}: {v}" for k, v in (m.get("facts") or {}).items()]
-        return f"{prefix}{bb.line or m.get('headline', '')} {why}".strip(), facts
+        # Analysts get the reason too, kept short because it is read out live: whole sentences up to ~30 words.
+        reason = ""
+        for sentence in (x.strip().rstrip(".") for x in why.split(". ") if x.strip()):
+            if reason and len((reason + " " + sentence).split()) > 30:
+                break
+            reason = f"{reason} {sentence}." if reason else f"{sentence}."
+        return f"{prefix}{bb.line or m.get('headline', '')} {reason}".strip(), facts
 
     def _output(self, bb: Blackboard, text: str, facts: list[str], translated: bool) -> None:
         m = bb.moment or {}

@@ -1,4 +1,4 @@
-import type { MatchMeta, Narration, Persona } from "../types";
+import type { MatchMeta, Moment, Narration, Persona } from "../types";
 
 const KIND_LABEL: Record<string, string> = {
   play_by_play: "▶ play-by-play",
@@ -13,9 +13,17 @@ interface Props {
   narrations: Narration[];
   persona: Persona;
   model: string | null;
+  moments?: Moment[];
+  onExplain?: (m: Moment) => void;
 }
 
-export function CommentaryFeed({ meta, narrations, persona, model }: Props) {
+/** The key moment a commentary line is about (a goal or chance a few seconds earlier), if any. */
+function momentFor(n: Narration, moments: Moment[]): Moment | undefined {
+  if (!["goal", "big_chance", "rocket_shot", "forecast_on_target"].includes(n.kind)) return undefined;
+  return moments.find((m) => m.t <= n.t + 1 && n.t - m.t < 6);
+}
+
+export function CommentaryFeed({ meta, narrations, persona, model, moments = [], onExplain }: Props) {
   const analyst = persona.mode === "analyst";
   return (
     <div className="panel feed">
@@ -38,6 +46,11 @@ export function CommentaryFeed({ meta, narrations, persona, model }: Props) {
             )}
           </div>
           <p>{n.text}</p>
+          {onExplain && momentFor(n, moments) && (
+            <button className="explain-btn" onClick={() => onExplain(momentFor(n, moments)!)}>
+              ▶ Replay & explain
+            </button>
+          )}
           {analyst && n.facts.length > 0 && (
             <details className="brief">
               <summary>What the director told the narrator</summary>

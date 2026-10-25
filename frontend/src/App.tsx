@@ -55,6 +55,7 @@ export default function App() {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [program, setProgram] = useState<Program | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [ftDismissed, setFtDismissed] = useState(false);
   const resumeAfterReplay = useRef(false);
 
   useEffect(() => {
@@ -267,6 +268,19 @@ export default function App() {
         onExplain={explainMoment}
         onHighlights={highlightsSoFar}
       />
+      {state.ended && !program && !busy && moments.length > 0 && !ftDismissed && (
+        <div className="ft-prompt">
+          <span>
+            <b>Full time.</b> The producer can cut the match highlights now.
+          </span>
+          <button className="highlights-btn" onClick={highlightsSoFar}>
+            🎬 Watch match highlights
+          </button>
+          <button className="ft-close" onClick={() => setFtDismissed(true)} aria-label="Dismiss">
+            ✕
+          </button>
+        </div>
+      )}
       {busy && (
         <div className="agent-busy">
           <span className="spinner" /> {busy}
@@ -322,7 +336,7 @@ export default function App() {
           {persona.favorite_player && (
             <PlayerFocus meta={meta} playerId={persona.favorite_player} plugins={state.plugins} narrations={state.narrations} />
           )}
-          <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} model={model} />
+          <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} model={model} moments={moments} onExplain={explainMoment} />
         </aside>
         <section className={`bottom bottom-${audience}`}>
           <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
