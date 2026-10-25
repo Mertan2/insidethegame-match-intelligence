@@ -222,6 +222,12 @@ class ProducerAgent(Agent):
         bb.output = {"intro": str(data["intro"]).strip(), "outro": str(data["outro"]).strip(), "language": bb.persona.language}
 
 
+def clean(trace: list[dict[str, Any]]) -> bool:
+    """True when every agent step ran as intended: no fallback and no model error inside a step.
+    Only clean results are cached, so a throttled model call is retried next time instead of sticking."""
+    return all(t.get("status", "ok") == "ok" and not t.get("llm_error") for t in trace)
+
+
 def _names(meta) -> dict[str, str]:
     return {p.id: p.name for p in meta.players}
 
@@ -257,7 +263,7 @@ async def highlights(llm, meta, clips: list[dict[str, Any]], score: dict[str, in
         key = (meta.match_id, c["id"], persona.model_dump_json())
         if key not in cache:
             item = await explain(llm, meta, c, persona, "short", from_t=c["clip_start"], agent=explainer)
-            if all(t.get("status", "ok") == "ok" for t in item["trace"]):
+            if clean(item["trace"]):
                 cache[key] = item
             return item
         return cache[key]

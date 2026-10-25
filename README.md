@@ -206,6 +206,31 @@ Broadcast cues: `GET /api/matches/{id}/overlays` returns the full timeline of gr
 
 It shows up as a toggle in the UI automatically. Its payload arrives under `tick.plugins.<name>`.
 
+### A2A: call the match analyst from another agent
+
+The match analyst is also an **A2A (Agent2Agent)** agent, so a broadcaster's own agent or studio tool can use it
+directly. Discover it from its card and send it a message over JSON-RPC:
+
+- Card: `GET /.well-known/agent-card.json` (skills: `ask`, `explain`, `highlights`)
+- Endpoint: `POST /a2a`
+
+```python
+import asyncio, httpx
+from a2a.client import A2ACardResolver
+from agent_framework.a2a import A2AAgent
+
+async def main():
+    async with httpx.AsyncClient(timeout=60) as http:
+        card = await A2ACardResolver(http, "https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io").get_agent_card()
+        analyst = A2AAgent(agent_card=card, http_client=http)
+        print((await analyst.run("Explain the 8th-minute goal")).text)
+
+asyncio.run(main())
+```
+
+It is an Agent Framework `Agent` whose chat client routes each request to the app's ask, explainer and producer
+agents, served by Agent Framework's `A2AExecutor` on the official A2A SDK (`app/a2a_server.py`).
+
 ### WebSocket protocol
 
 Server → client: `meta`, `tick {frame, events, plugins, insights}`, `narration` (with the agent `trace`),

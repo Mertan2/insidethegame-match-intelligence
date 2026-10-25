@@ -12,7 +12,7 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request, WebSocket
 
-LIMITS = {"tts": 150, "ai": 40, "ask": 20}  # requests per minute per client
+LIMITS = {"tts": 150, "ai": 40, "ask": 20, "a2a": 30}  # requests per minute per client
 WINDOW_S = 60.0
 
 _hits: dict[tuple[str, str], deque[float]] = defaultdict(deque)

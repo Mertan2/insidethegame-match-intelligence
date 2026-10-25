@@ -19,7 +19,8 @@ from pydantic import BaseModel, Field
 from . import ratelimit, telemetry
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
-from .agents.explain_agent import explain, highlights
+from .a2a_server import build_routes as build_a2a_routes, minute_of
+from .agents.explain_agent import clean, explain, highlights
 from .commentary import CommentaryScheduler
 from .speech import VOICES, get_speech
 from .models import Match
@@ -206,6 +207,8 @@ async def _explained(match: Match, moment: dict, persona: Persona) -> dict:
         with telemetry.span("explain", **{"moment.id": moment["id"], "moment.kind": moment["kind"]}):
             out = await explain(llm, match.meta, moment, persona, "full")
         out["frames"] = frames_between(match, moment["start"], moment["end"])
+        if not clean(out["trace"]):
+            return out
         _explain_cache[key] = out
     return _explain_cache[key]
 
@@ -222,6 +225,8 @@ async def _reel(match: Match, upto: float | None, persona: Persona) -> dict:
             out = await highlights(llm, match.meta, clips, dict(frame.score), int(upto_t // 60), finished, persona, _clip_cache)
         out = {**out, "items": [{**item, "frames": frames_between(match, item["moment"]["clip_start"], item["moment"]["end"])}
                                 for item in out["items"]]}
+        if not clean(out["trace"]):
+            return out
         _explain_cache[key] = out
     return _explain_cache[key]
 
@@ -263,6 +268,50 @@ async def highlights_reel(request: Request, match_id: str, upto: float | None = 
     parallel, then the producer writes the intro and outro. `upto` = highlights so far (live)."""
     ratelimit.check(request, "ai")
     return await _reel(_match(match_id), upto, Persona(mode=mode, language=lang))
+
+
+# ----------------------------------------------------------------------------- A2A
+def _demo_match() -> Match:
+    return _match(_store().list()[0]["match_id"])
+
+
+async def _a2a_ask(question: str) -> str:
+    match = _demo_match()
+    insights, snapshots = await asyncio.to_thread(_full_pass, match)
+    last = match.frames[-1]
+    ctx = LiveContext(meta=match.meta, t=last.t, score=dict(last.score), snapshots=snapshots, events=list(match.events))
+    out = await AskAgent(llm).answer(question[:300], ctx, Persona(mode="analyst"))
+    tools = ", ".join(c["tool"] for c in out["tools"])
+    return out["answer"] + (f"\n\n(tools used: {tools})" if tools else "")
+
+
+async def _a2a_explain(text: str) -> str:
+    match = _demo_match()
+    minute = minute_of(text)
+    moments = _moments(match)
+    if not moments:
+        return "No shots in this match yet."
+    wanted = "goal" if "goal" in text.lower() else None
+    pool = [m for m in moments if wanted is None or m["kind"] == wanted] or moments
+    moment = min(pool, key=lambda m: abs(m["minute"] - (minute or m["minute"])))
+    out = await _explained(match, moment, Persona(mode="analyst"))
+    lines = [f"{moment['minute']}' {moment['kind']}: {out['headline']}"] + [f"- {b['text']}" for b in out["beats"]]
+    if out["verdict"]:
+        lines.append(out["verdict"])
+    return "\n".join(lines)
+
+
+async def _a2a_highlights(_: str) -> str:
+    out = await _reel(_demo_match(), None, Persona())
+    lines = [out["intro"]]
+    for item in out["items"]:
+        m = item["moment"]
+        lines.append(f"- {m['minute']}' {m['kind'].upper()}: {item['headline']}. " + " ".join(b["text"] for b in item["beats"]))
+    lines.append(out["outro"])
+    return "\n".join(lines)
+
+
+app.router.routes.extend(build_a2a_routes({"ask": _a2a_ask, "explain": _a2a_explain, "highlights": _a2a_highlights}))
 
 
 @app.websocket("/ws/live/{match_id}")
@@ -318,7 +367,7 @@ async def live(
         cached = out is not None
         if out is None:
             out = await orchestrator.narrate(t, score, insights, snapshots, p)
-            if out is not None and all(s.get("status", "ok") == "ok" for s in out.get("trace", [])):
+            if out is not None and clean(out.get("trace", [])):
                 _narration_cache[key] = out
                 if len(_narration_cache) > NARRATION_CACHE_SIZE:
                     _narration_cache.pop(next(iter(_narration_cache)))

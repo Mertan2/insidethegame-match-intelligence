@@ -63,6 +63,9 @@ clock.
   to the viewer. The *recap agent* writes match reports. The *ask agent* answers viewer questions with function
   calling over six live-data tools. The *explainer agent* breaks a moment into spoken beats tied to the replay's
   freeze-frames. The *producer agent* cuts the highlights package.
+- **A2A.** The match analyst is published as an A2A agent (agent card plus JSON-RPC endpoint, via Agent
+  Framework's `A2AExecutor`), so a broadcaster's own agent can ask it questions, have it explain a moment or
+  fetch the highlights package: the agent team is a building block for other agents, not just a UI.
 - **Fan-out / fan-in.** For highlights the producer ranks the moments, launches one explainer per clip in parallel,
   then writes the intro and outro over what they returned; every step is traced and falls back on its own.
 - **Shared state and handoffs.** The live chain is an Agent Framework `Workflow` with one executor per agent; agents
@@ -81,7 +84,7 @@ clock.
   no single agent could produce live and grounded at the same time.
 
 **Microsoft and Azure technology.**
-- **Microsoft Agent Framework:** agents and the live narration workflow.
+- **Microsoft Agent Framework:** agents, the live narration workflow, and the A2A server (`A2AExecutor`).
 - **Azure OpenAI (`gpt-4.1-mini`, Microsoft Foundry model):** tactics, narrator, persona, recap and ask agents,
   including function calling.
 - **Azure AI Speech:** neural-voice spoken commentary and answers in 7 languages.
@@ -90,7 +93,7 @@ clock.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (51 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (54 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
