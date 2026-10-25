@@ -57,6 +57,11 @@ export default function App() {
   const [busy, setBusy] = useState<string | null>(null);
   const [ftDismissed, setFtDismissed] = useState(false);
   const resumeAfterReplay = useRef(false);
+  const justResumed = useRef(false); // play sent after a replay, acknowledgement not back yet
+
+  useEffect(() => {
+    if (!state.paused) justResumed.current = false;
+  }, [state.paused]);
 
   useEffect(() => {
     setMoments([]);
@@ -86,7 +91,7 @@ export default function App() {
   /** Pause the live feed, ask the agents for a replay, then open the theatre. */
   const openReplay = async <T,>(label: string, url: string, toProgram: (data: T) => Program) => {
     setBusy(label);
-    resumeAfterReplay.current = !state.paused && !state.ended;
+    resumeAfterReplay.current = (!state.paused || justResumed.current) && !state.ended;
     send({ type: "control", action: "pause" });
     try {
       const res = await fetch(url);
@@ -114,7 +119,10 @@ export default function App() {
     );
   const closeReplay = () => {
     setProgram(null);
-    if (resumeAfterReplay.current) send({ type: "control", action: "play" });
+    if (resumeAfterReplay.current) {
+      send({ type: "control", action: "play" });
+      justResumed.current = true;
+    }
   };
 
   const updatePersona = (patch: Partial<Persona>) => {
