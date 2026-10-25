@@ -138,10 +138,8 @@ export default function App() {
   };
 
   const control = (msg: { action?: string; t?: number; speed?: number }) => {
-    if (msg.action === "seek") {
-      clearNarrations();
-      stopVoice();
-    }
+    if (msg.action === "seek") clearNarrations();
+    if (msg.action === "seek" || msg.action === "pause") stopVoice(); // paused means quiet, too
     send({ type: "control", ...msg });
   };
 
