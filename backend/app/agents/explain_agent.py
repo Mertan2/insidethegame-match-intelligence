@@ -245,12 +245,24 @@ async def explain(llm, meta, moment: dict[str, Any], persona: Persona, mode: str
 
 
 async def highlights(llm, meta, clips: list[dict[str, Any]], score: dict[str, int], minute: int, finished: bool,
-                     persona: Persona) -> dict[str, Any]:
-    """Fan out one explainer per clip in parallel, then the producer writes around them."""
+                     persona: Persona, clip_cache: dict | None = None) -> dict[str, Any]:
+    """Fan out one explainer per clip in parallel, then the producer writes around them.
+
+    `clip_cache` keeps each clip's explanation (per persona), so a later "highlights so far" with more
+    clips only runs explainers for the new ones."""
     explainer = ExplainAgent(llm)
-    items = await asyncio.gather(
-        *(explain(llm, meta, c, persona, "short", from_t=c["clip_start"], agent=explainer) for c in clips)
-    )
+    cache = clip_cache if clip_cache is not None else {}
+
+    async def clip(c: dict[str, Any]) -> dict[str, Any]:
+        key = (meta.match_id, c["id"], persona.model_dump_json())
+        if key not in cache:
+            item = await explain(llm, meta, c, persona, "short", from_t=c["clip_start"], agent=explainer)
+            if all(t.get("status", "ok") == "ok" for t in item["trace"]):
+                cache[key] = item
+            return item
+        return cache[key]
+
+    items = await asyncio.gather(*(clip(c) for c in clips))
     package = {
         "home": meta.teams["home"].name,
         "away": meta.teams["away"].name,

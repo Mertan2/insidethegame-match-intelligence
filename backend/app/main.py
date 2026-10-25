@@ -48,7 +48,14 @@ async def lifespan(app: FastAPI):
         warmup.add_done_callback(lambda t: t.exception())  # best effort; never crash startup
     if not store.list():
         await asyncio.to_thread(store.generate, DEFAULT_SEED, DEFAULT_MINUTES)
+    prewarm = None
+    if llm.available and os.getenv("PREWARM", "1") == "1":
+        first = store.get(store.list()[0]["match_id"])
+        if first is not None:
+            prewarm = asyncio.create_task(_prewarm(first))
     yield
+    if prewarm is not None:
+        prewarm.cancel()
 
 
 app = FastAPI(title="Inside the Game - Match Intelligence", lifespan=lifespan)
@@ -176,6 +183,7 @@ async def recap(
 
 _moments_cache: dict[str, list[dict]] = {}
 _narration_cache: dict[tuple, dict] = {}
+_clip_cache: dict[tuple, dict] = {}
 NARRATION_CACHE_SIZE = 5000
 _explain_cache: dict[tuple, dict] = {}
 
@@ -192,6 +200,52 @@ def moments(match_id: str, upto: float | None = None) -> list[dict]:
     return [m for m in _moments(_match(match_id)) if upto is None or m["t"] <= upto]
 
 
+async def _explained(match: Match, moment: dict, persona: Persona) -> dict:
+    key = ("explain", match.meta.match_id, moment["id"], persona.model_dump_json())
+    if key not in _explain_cache:
+        with telemetry.span("explain", **{"moment.id": moment["id"], "moment.kind": moment["kind"]}):
+            out = await explain(llm, match.meta, moment, persona, "full")
+        out["frames"] = frames_between(match, moment["start"], moment["end"])
+        _explain_cache[key] = out
+    return _explain_cache[key]
+
+
+async def _reel(match: Match, upto: float | None, persona: Persona) -> dict:
+    end_t = match.frames[-1].t
+    finished = upto is None or upto >= end_t
+    upto_t = end_t if finished else float(upto)
+    clips = pick_highlights(_moments(match), upto_t)
+    key = ("reel", match.meta.match_id, tuple(c["id"] for c in clips), finished, persona.model_dump_json())
+    if key not in _explain_cache:
+        frame = match.frames[min(len(match.frames) - 1, int(upto_t * match.meta.fps))]
+        with telemetry.span("highlights", **{"clips": len(clips), "finished": finished}):
+            out = await highlights(llm, match.meta, clips, dict(frame.score), int(upto_t // 60), finished, persona, _clip_cache)
+        out = {**out, "items": [{**item, "frames": frames_between(match, item["moment"]["clip_start"], item["moment"]["end"])}
+                                for item in out["items"]]}
+        _explain_cache[key] = out
+    return _explain_cache[key]
+
+
+async def _prewarm(match: Match) -> None:
+    """Fill the replay caches for the default viewers after a (re)start, so the first clicks are instant."""
+    sem = asyncio.Semaphore(3)
+
+    async def one(coro) -> None:
+        async with sem:
+            try:
+                await coro
+            except Exception:  # noqa: BLE001 - best effort, the endpoints still work on demand
+                pass
+
+    for mode in ("casual", "analyst"):
+        persona = Persona(mode=mode, language="en")
+        await asyncio.gather(*(one(_explained(match, m, persona)) for m in _moments(match)))
+        await one(_reel(match, None, persona))
+        # "Highlights so far" only changes when a shot happens, so one reel per moment covers every click.
+        for m in _moments(match):
+            await one(_reel(match, m["t"], persona))
+
+
 @app.get("/api/matches/{match_id}/moments/{moment_id}/explain")
 async def explain_moment(request: Request, match_id: str, moment_id: str, mode: str = "casual", lang: str = "en") -> dict:
     """The explainer agent breaks one moment down into beats for the replay telestrator."""
@@ -200,14 +254,7 @@ async def explain_moment(request: Request, match_id: str, moment_id: str, mode: 
     moment = next((m for m in _moments(match) if m["id"] == moment_id), None)
     if moment is None:
         raise HTTPException(404, f"Unknown moment {moment_id}")
-    persona = Persona(mode=mode, language=lang)
-    key = ("explain", match_id, moment_id, persona.model_dump_json())
-    if key not in _explain_cache:
-        with telemetry.span("explain", **{"moment.id": moment_id, "moment.kind": moment["kind"]}):
-            out = await explain(llm, match.meta, moment, persona, "full")
-        out["frames"] = frames_between(match, moment["start"], moment["end"])
-        _explain_cache[key] = out
-    return _explain_cache[key]
+    return await _explained(match, moment, Persona(mode=mode, language=lang))
 
 
 @app.get("/api/matches/{match_id}/highlights")
@@ -215,22 +262,7 @@ async def highlights_reel(request: Request, match_id: str, upto: float | None = 
     """Automated highlights package: the producer picks the clips, one explainer per clip runs in
     parallel, then the producer writes the intro and outro. `upto` = highlights so far (live)."""
     ratelimit.check(request, "ai")
-    match = _match(match_id)
-    end_t = match.frames[-1].t
-    finished = upto is None or upto >= end_t
-    upto_t = end_t if finished else float(upto)
-    clips = pick_highlights(_moments(match), upto_t)
-    persona = Persona(mode=mode, language=lang)
-    key = ("reel", match_id, tuple(c["id"] for c in clips), finished, persona.model_dump_json())
-    if key not in _explain_cache:
-        frame = match.frames[min(len(match.frames) - 1, int(upto_t * match.meta.fps))]
-        with telemetry.span("highlights", **{"clips": len(clips), "finished": finished}):
-            out = await highlights(llm, match.meta, clips, dict(frame.score), int(upto_t // 60), finished, persona)
-        for item in out["items"]:
-            m = item["moment"]
-            item["frames"] = frames_between(match, m["clip_start"], m["end"])
-        _explain_cache[key] = out
-    return _explain_cache[key]
+    return await _reel(_match(match_id), upto, Persona(mode=mode, language=lang))
 
 
 @app.websocket("/ws/live/{match_id}")
