@@ -77,7 +77,7 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
 - **Azure Container Apps + Azure Container Registry:** single container serving the UI, REST and WebSocket feed;
   model, speech and telemetry keys are Container Apps secrets.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
-- **GitHub:** public repository with GitHub Actions CI (42 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (43 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
