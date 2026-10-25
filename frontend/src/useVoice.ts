@@ -18,6 +18,8 @@ export function useVoice(enabled: boolean) {
   const playing = useRef(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   const next = useCallback(async () => {
     if (playing.current) return;
@@ -32,7 +34,9 @@ export function useVoice(enabled: boolean) {
         body: JSON.stringify({ text: line.text, lang: line.lang, kind: line.kind }),
       });
       if (!res.ok) throw new Error(`tts ${res.status}`);
-      const url = URL.createObjectURL(await res.blob());
+      const blob = await res.blob();
+      if (!enabledRef.current) return; // muted (or a replay opened) while this line was being fetched
+      const url = URL.createObjectURL(blob);
       const a = new Audio(url);
       audio.current = a;
       await new Promise<void>((resolve) => {
