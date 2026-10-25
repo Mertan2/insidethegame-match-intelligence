@@ -95,8 +95,14 @@ which agent ran, by which path and how long it took. Everything runs in one Azur
 latency), Ask question, tool call and voice request is an OpenTelemetry span in Azure Application Insights, with
 the Azure OpenAI and Speech calls as child dependencies (`app/telemetry.py`). Unset, tracing is off.
 
-Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins) → **explain** (tactics agent)
-→ **render** (2D/3D overlays) → **personalize** (persona agent: casual/analyst, favourite club/player, language).
+Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins, key moments) → **explain**
+(tactics and explainer agents, telestrated replays) → **render** (2D/3D, broadcast cues, replay theatre, highlights)
+→ **personalize** (persona agent and Fan / Broadcaster / Analyst modes: style, favourite club/player, language).
+
+**Running in production:** live narrations, explanations and highlights clips are cached per moment and persona,
+so repeat viewers reuse them (and their audio) instead of calling the model again; after a restart the app
+pre-builds the English replays in the background (`PREWARM=0` turns it off). The paid endpoints (voice,
+explain/highlights/recap, Ask) are rate-limited per client (`app/ratelimit.py`).
 
 ## Run
 
@@ -170,7 +176,8 @@ Each tracking frame (10 Hz) holds the ball `(x, y, z)`, every player's `(x, y)`,
 right foot `(x, y, z)` from a gait model (stride length and cadence scale with speed, the swing foot
 lifts, the striking foot is planted on the ball at a kick). Every player has a `preferred_foot`, and every
 pass and shot records `body_part` (`left_foot` / `right_foot`) and `weak_foot`. Weak-foot kicks are less
-accurate and rate harder in pass difficulty. Headers aren't modelled yet.
+accurate and rate harder in pass difficulty. Crosses are lofted and attackers head them when the ball drops
+through head height (`body_part: head`), so headed passes, shots and goals appear in the feed.
 
 Broadcast cues: `GET /api/matches/{id}/overlays` returns the full timeline of graphics cues
 (`t_in`, `t_out`, `slot`, `template`, data) for a graphics engine to sync against the match clock.
@@ -183,11 +190,14 @@ Broadcast cues: `GET /api/matches/{id}/overlays` returns the full timeline of gr
 | `backend/app/generator/synthetic.py` | Agent-based match simulator: formations, pressing, passes, shots, tackles, restarts |
 | `backend/app/replay.py` | Paces stored frames like a live feed (pause / seek / 0.1x–32x) |
 | `backend/app/pipeline.py` | Runs enabled plugins per frame; toggling a plugin on catches it up on the match so far |
-| `backend/app/plugins/` | `stats`, `pass_quality`, `speed_metrics`, `ball_forecast`, `momentum`, `overlays` |
-| `backend/app/agents/` | Microsoft Agent Framework agents + workflow over a shared blackboard, recap; `llm.py` holds the Foundry client |
+| `backend/app/plugins/` | `stats`, `pass_quality`, `speed_metrics`, `ball_forecast`, `momentum`, `director` (broadcast briefs), `overlays` |
+| `backend/app/commentary.py` | Commentary scheduler: key moments first, routine briefs paced for a voice, stale play dropped |
+| `backend/app/agents/` | Microsoft Agent Framework agents: live chain (`stats` → `tactics` → `narrator` → `persona`) as a workflow over a shared blackboard; `ask_agent` (function calling), `explain_agent` (explainer + producer), `recap_agent`; `llm.py` holds the Foundry client |
 | `backend/app/moments.py` | Key moments from events + tracking: build-up, key pass, shot context, replay windows |
-| `backend/app/main.py` | REST + `WS /ws/live/{match_id}`; `/moments`, `/moments/{id}/explain`, `/highlights` |
-| `frontend/src/` | React app: `Pitch2D` (canvas), `Ball3D` (react-three-fiber), stats, live narrative, recap |
+| `backend/app/speech.py` | Azure AI Speech neural voices per language, cached |
+| `backend/app/telemetry.py`, `ratelimit.py` | OpenTelemetry to Application Insights; per-client limits on paid endpoints |
+| `backend/app/main.py` | REST + `WS /ws/live/{match_id}`; `/moments`, `/moments/{id}/explain`, `/highlights`, `/recap`, `/tts` |
+| `frontend/src/` | React app: `Pitch2D` (canvas), `Ball3D` (react-three-fiber), `ReplayTheater` (telestrator), `MomentsBar`, `AgentOps`, `AskPanel`, `DataView`, audience modes |
 
 ### Add a plugin
 
@@ -198,11 +208,13 @@ It shows up as a toggle in the UI automatically. Its payload arrives under `tick
 
 ### WebSocket protocol
 
-Server → client: `meta`, `tick {frame, events, plugins, insights}`, `narration`, `end`, `*_ack`.
+Server → client: `meta`, `tick {frame, events, plugins, insights}`, `narration` (with the agent `trace`),
+`answer` (with the tools called), `end`, `*_ack`.
 Client → server:
 - `{"type":"control","action":"pause|play|seek","t":120,"speed":8}`
 - `{"type":"plugins","enabled":[...]}`
 - `{"type":"persona","persona":{"mode":"analyst","language":"tr","favorite_player":"h10"}}`
+- `{"type":"ask","question":"Who is tiring?"}`
 
 ## Design notes
 
@@ -213,7 +225,10 @@ Client → server:
 - **Grounded numbers:** the stats agent is deterministic and picks the facts. LLM agents only phrase, explain
   and translate, so commentary can't invent statistics.
 - **Failure recovery:** each agent has a timeout. On error or timeout its template runs instead, and the
-  per-narration `trace` records which path ran.
+  per-narration `trace` records which path ran. The explainer and producer ask for JSON mode, retry once on a
+  malformed reply, then fall back to grounded templates; fallbacks are never cached.
+- **Fan-out / fan-in:** a highlights package runs one explainer per clip in parallel (`asyncio.gather`), then the
+  producer writes the intro and outro over their headlines.
 - **Forecast honesty:** tracking doesn't expose spin, but the generator applies Magnus curl, so forecasts are
   scored against reality (mean position error 1 s ahead, about 0.15–0.2 m now).
 - **Generator simplifications:** no offside, fouls or cards; teams don't swap ends at half time. Action is
@@ -224,4 +239,5 @@ Client → server:
 - Host the agents in Foundry Agent Service (they already run on Agent Framework).
 - Stream through Azure Event Hubs, store in Fabric.
 - Learned models: xG, pass difficulty, spin estimation for the forecast.
-- Headers and full-body pose (knees, hips) in the limb data; compress cached matches (about 17 MB per 20 min of JSON).
+- Full-body pose (knees, hips) in the limb data; compress cached matches (about 17 MB per 20 min of JSON).
+- Export the highlights package as video for social clips.
