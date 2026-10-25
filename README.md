@@ -1,5 +1,7 @@
 # Inside the Game: Match Intelligence
 
+![Inside the Game: explainable match intelligence, live](docs/cover.png)
+
 Hackathon project for **Microsoft + Premier League "Inside the Game"**. It turns synthetic football data into
 live, explainable match intelligence: stats derived from raw data, a bird's-eye view, a 3D ball-flight
 forecast, and a multi-agent narrator that writes for each viewer.
