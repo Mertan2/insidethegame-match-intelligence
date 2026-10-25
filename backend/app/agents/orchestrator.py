@@ -15,6 +15,7 @@ from typing import Any
 
 from agent_framework import Executor, Workflow, WorkflowBuilder, WorkflowContext, handler
 
+from .. import telemetry
 from ..models import MatchMeta
 from ..plugins import Insight
 from .ask_agent import AskAgent
@@ -32,19 +33,24 @@ BLACKBOARD = "blackboard"  # workflow shared-state key
 
 
 async def run_step(agent: Agent, bb: Blackboard, timeout: float | None = None) -> None:
-    """Run one agent with a timeout and template fallback, appending its trace entry."""
+    """Run one agent with a timeout and template fallback, appending its trace entry (and a tracing span)."""
     started = time.perf_counter()
-    try:
-        path = await asyncio.wait_for(agent.run(bb), timeout=timeout or AGENT_TIMEOUT_S)
-        status = "ok"
-    except Exception as exc:  # noqa: BLE001 - includes TimeoutError
-        status = f"fallback:{type(exc).__name__}"
-        path = "template"
+    with telemetry.span(f"agent.{agent.name}", **{"agent.name": agent.name, "moment.kind": (bb.moment or {}).get("kind")}) as sp:
         try:
-            agent.run_template(bb)
-        except Exception as exc2:  # noqa: BLE001
-            status = f"failed:{type(exc2).__name__}"
-    bb.trace.append({"agent": agent.name, "path": path, "status": status, "ms": round((time.perf_counter() - started) * 1000, 1)})
+            path = await asyncio.wait_for(agent.run(bb), timeout=timeout or AGENT_TIMEOUT_S)
+            status = "ok"
+        except Exception as exc:  # noqa: BLE001 - includes TimeoutError
+            status = f"fallback:{type(exc).__name__}"
+            path = "template"
+            try:
+                agent.run_template(bb)
+            except Exception as exc2:  # noqa: BLE001
+                status = f"failed:{type(exc2).__name__}"
+        ms = round((time.perf_counter() - started) * 1000, 1)
+        sp.set_attribute("agent.path", path)
+        sp.set_attribute("agent.status", status)
+        sp.set_attribute("agent.ms", ms)
+    bb.trace.append({"agent": agent.name, "path": path, "status": status, "ms": ms})
 
 
 class AgentStep(Executor):
@@ -115,7 +121,9 @@ class Orchestrator:
             snapshots=snapshots,
         )
         # A workflow instance runs one request at a time; narrations can overlap, so build one per run.
-        result = await build_workflow(self.chain).run(bb)
+        with telemetry.span("narration", **{"insight.kind": insights[0].kind if insights else None,
+                                            "persona.mode": persona.mode, "persona.language": persona.language}):
+            result = await build_workflow(self.chain).run(bb)
         outputs = result.get_outputs()
         final: Blackboard | None = outputs[-1] if outputs else None
         if final is None or final.output is None:

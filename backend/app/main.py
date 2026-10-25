@@ -15,6 +15,7 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from . import telemetry
 from .agents import Orchestrator, Persona, get_llm
 from .agents.ask_agent import AskAgent, LiveContext
 from .commentary import CommentaryScheduler
@@ -29,6 +30,7 @@ DEFAULT_SEED = int(os.getenv("MATCH_SEED", "2"))  # seed 2: an eventful 2-2 with
 DEFAULT_MINUTES = int(os.getenv("MATCH_MINUTES", "20"))
 
 store: MatchStore | None = None
+telemetry.setup()  # before the model and speech clients are created, so their calls are traced
 llm = get_llm()
 speech = get_speech()
 
@@ -70,7 +72,8 @@ class GenerateRequest(BaseModel):
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     return {"ok": True, "llm": type(llm).__name__, "model": getattr(llm, "deployment", None),
-            "voice": "Azure AI Speech" if speech else None}
+            "voice": "Azure AI Speech" if speech else None,
+            "tracing": "Azure Application Insights" if telemetry.enabled else None}
 
 
 class TTSRequest(BaseModel):
@@ -86,7 +89,8 @@ async def tts(req: TTSRequest) -> Response:
         raise HTTPException(503, "Speech not configured")
     if req.lang not in VOICES:
         raise HTTPException(400, f"No voice for language {req.lang}")
-    audio = await speech.synthesize(req.text, req.lang, req.kind)
+    with telemetry.span("tts", **{"tts.language": req.lang, "tts.kind": req.kind, "tts.chars": len(req.text)}):
+        audio = await speech.synthesize(req.text, req.lang, req.kind)
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
 
 

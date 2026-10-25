@@ -10,6 +10,7 @@ dependencies = [
     "numpy>=2.0",
     "httpx>=0.27",
     "agent-framework-core>=1.22",
+    "azure-monitor-opentelemetry>=1.6",
 ]
 
 [project.optional-dependencies]

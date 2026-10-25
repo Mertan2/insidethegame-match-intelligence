@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from .. import telemetry
 from ..models import Event, MatchMeta
 from .base import Persona
 
@@ -151,12 +152,15 @@ def tool_specs() -> list[dict[str, Any]]:
 
 
 def run_tool(ctx: LiveContext, name: str, args: dict[str, Any]) -> dict[str, Any]:
-    if name not in TOOLS:
-        return {"error": f"unknown tool {name}"}
-    try:
-        return TOOLS[name][0](ctx, **args)
-    except Exception as exc:  # noqa: BLE001 - tool errors go back to the model
-        return {"error": f"{type(exc).__name__}: {exc}"}
+    with telemetry.span(f"tool.{name}", **{"tool.name": name, "tool.args": json.dumps(args, default=str)}) as sp:
+        if name not in TOOLS:
+            sp.set_attribute("tool.error", "unknown tool")
+            return {"error": f"unknown tool {name}"}
+        try:
+            return TOOLS[name][0](ctx, **args)
+        except Exception as exc:  # noqa: BLE001 - tool errors go back to the model
+            sp.set_attribute("tool.error", type(exc).__name__)
+            return {"error": f"{type(exc).__name__}: {exc}"}
 
 
 # ----------------------------------------------------------------------------- agent
@@ -168,6 +172,15 @@ class AskAgent:
         self.llm = llm
 
     async def answer(self, question: str, ctx: LiveContext, persona: Persona) -> dict[str, Any]:
+        with telemetry.span("ask", **{"ask.language": persona.language, "ask.mode": persona.mode,
+                                      "ask.question_chars": len(question)}) as sp:
+            out = await self._answer(question, ctx, persona)
+            sp.set_attribute("ask.path", out["path"])
+            sp.set_attribute("ask.tools", ",".join(c["tool"] for c in out["tools"]))
+            sp.set_attribute("ask.ms", out["ms"])
+            return out
+
+    async def _answer(self, question: str, ctx: LiveContext, persona: Persona) -> dict[str, Any]:
         started = time.perf_counter()
         calls: list[dict[str, Any]] = []
         if getattr(self.llm, "available", False) and hasattr(self.llm, "chat"):

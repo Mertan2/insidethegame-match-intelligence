@@ -66,6 +66,10 @@ flowchart TB
 Every agent runs with a timeout and a deterministic template fallback, and each narration carries a trace of
 which agent ran, by which path and how long it took. Everything runs in one Azure Container Apps container.
 
+**Tracing:** with `APPLICATIONINSIGHTS_CONNECTION_STRING` set, each narration, agent step (path, fallback,
+latency), Ask question, tool call and voice request is an OpenTelemetry span in Azure Application Insights, with
+the Azure OpenAI and Speech calls as child dependencies (`app/telemetry.py`). Unset, tracing is off.
+
 Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins) → **explain** (tactics agent)
 → **render** (2D/3D overlays) → **personalize** (persona agent: casual/analyst, favourite club/player, language).
 
@@ -125,11 +129,11 @@ az containerapp up --name insidethegame --resource-group <rg> --location <region
 Keep the model key out of the image: store it as a Container Apps secret and reference it.
 
 ```bash
-az containerapp secret set -n insidethegame -g <rg> --secrets aoai-key=<key>
+az containerapp secret set -n insidethegame -g <rg> --secrets aoai-key=<key> appinsights-conn=<connection-string>
 ```
 
 ```bash
-az containerapp update -n insidethegame -g <rg> --min-replicas 1 --set-env-vars AZURE_OPENAI_ENDPOINT=<endpoint> AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini AZURE_OPENAI_API_KEY=secretref:aoai-key
+az containerapp update -n insidethegame -g <rg> --min-replicas 1 --set-env-vars AZURE_OPENAI_ENDPOINT=<endpoint> AZURE_OPENAI_DEPLOYMENT=gpt-4.1-mini AZURE_OPENAI_API_KEY=secretref:aoai-key APPLICATIONINSIGHTS_CONNECTION_STRING=secretref:appinsights-conn
 ```
 
 To ship a new version: `az acr build -r <registry> -t insidethegame:<tag> .`, then

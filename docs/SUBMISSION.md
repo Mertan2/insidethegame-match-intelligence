@@ -63,6 +63,9 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
 - **Recovering from failure.** Every agent runs with a timeout and a deterministic template fallback; each narration
   carries a trace of which agent ran, by which path and how long it took (visible in analyst mode), so one failing
   model call never silences the broadcast.
+- **Observable in production.** Every narration, agent step (path, fallback, latency), Ask question, tool call and
+  voice request is an OpenTelemetry span in Azure Application Insights, with the Azure OpenAI and Speech calls
+  underneath as dependencies, so you can see which agent is slow or falling back on the live deployment.
 - **End-to-end outcome.** From raw tracking to spoken, personalised, explained commentary for the whole match, which
   no single agent could produce live and grounded at the same time.
 
@@ -72,7 +75,8 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
   including function calling.
 - **Azure AI Speech:** neural-voice spoken commentary and answers in 7 languages.
 - **Azure Container Apps + Azure Container Registry:** single container serving the UI, REST and WebSocket feed;
-  model and speech keys are Container Apps secrets.
+  model, speech and telemetry keys are Container Apps secrets.
+- **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **GitHub:** public repository with GitHub Actions CI (42 tests, frontend build, Docker build and container smoke
   test).
 
