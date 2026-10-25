@@ -12,7 +12,7 @@ Best Multi-Agent Orchestration (also eligible for the Grand Prize)
 
 ## Tagline (one line)
 
-A team of AI agents that watches every event of a football match and explains it live, spoken and personalised for every fan.
+A team of AI agents that watches every event of a football match, explains it live and cuts a narrated, telestrated highlights package in one click, for fans, broadcasters and analysts.
 
 ## Elevator pitch
 
@@ -20,7 +20,10 @@ Live match data says *what* happened; fans, studios and broadcasters want *why* 
 different audiences. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
 intelligence: deeper stats, a 3D ball-flight forecast that calls shots on target before they arrive, and a team of
 specialised AI agents on Microsoft Agent Framework that commentates the whole match live, out loud, in the viewer's
-language, as a casual fan or an analyst. Built with Microsoft Agent Framework, Azure OpenAI (Microsoft Foundry
+language. Click any goal or chance and an explainer agent replays it like a TV analyst at the telestrator: the
+move is drawn on the pitch, the replay freezes on the key pass and the shot, and the analyst says why it worked. One
+click cuts an AI highlights package of the match so far: a producer agent picks the clips, explainers write every clip
+in parallel, the producer writes the intro and outro, and it plays narrated. Built with Microsoft Agent Framework, Azure OpenAI (Microsoft Foundry
 models), Azure AI Speech and Azure Container Apps.
 
 ## Description
@@ -29,10 +32,15 @@ models), Azure AI Speech and Azure Container Apps.
 the match", "it comes against the run of play", "the forecast called it on target 0.3 s before it arrived") normally
 takes a studio team, and it is produced once for everyone.
 
-**What it does.** Open the app, choose a language and casual or analyst mode, press **Kick off**. The match plays
+**What it does.** Open the app, choose a language and who is watching (**Fan**, **Broadcaster** or **Analyst**:
+each gets its own commentary style and screen), press **Kick off**. The match plays
 and an AI commentary team talks you through it continuously: play-by-play of what is on screen, fun facts as they
 happen, running and half-time/full-time recaps, and every goal and big chance first. You can ask it anything
 mid-match ("who is tiring?", "why are they dominating?") and see exactly which live-data tools it used to answer.
+Every shot and goal lands on a **key moments** timeline: click one to **explain this moment** (a telestrated,
+narrated replay grounded in the tracking: how the ball was won, the passes that took defenders out, the space at the
+shot), or press **Highlights so far** for an automated, narrated highlights package with no spoilers past the live
+clock.
 
 **The pipeline (the brief's five stages).**
 1. **Ingest:** an agent-based simulator produces football-realistic data (22 players and the ball in 3D at 10 Hz,
@@ -53,7 +61,10 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
   (play-by-play, fun facts, recaps). The *stats agent* picks the moment and the grounded facts. The *tactics agent*
   explains why it matters. The *narrator agent* writes the line. The *persona agent* adapts tone, focus and language
   to the viewer. The *recap agent* writes match reports. The *ask agent* answers viewer questions with function
-  calling over six live-data tools.
+  calling over six live-data tools. The *explainer agent* breaks a moment into spoken beats tied to the replay's
+  freeze-frames. The *producer agent* cuts the highlights package.
+- **Fan-out / fan-in.** For highlights the producer ranks the moments, launches one explainer per clip in parallel,
+  then writes the intro and outro over what they returned; every step is traced and falls back on its own.
 - **Shared state and handoffs.** The live chain is an Agent Framework `Workflow` with one executor per agent; agents
   coordinate through a blackboard in workflow shared state, each writing its own slot and handing off to the next. A
   commentary scheduler decides what is said when: key moments jump the queue, routine briefs are paced for a voice
@@ -77,7 +88,7 @@ mid-match ("who is tiring?", "why are they dominating?") and see exactly which l
 - **Azure Container Apps + Azure Container Registry:** single container serving the UI, REST and WebSocket feed;
   model, speech and telemetry keys are Container Apps secrets.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
-- **GitHub:** public repository with GitHub Actions CI (43 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (50 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
@@ -92,15 +103,16 @@ a production graphics path.
 
 ## How to try it (testing instructions)
 
-1. Open the live demo, pick a language and casual or analyst mode, press **Kick off with live commentary**
-   (sound on; browsers only allow audio after that click).
-2. Watch the **Agent team · live** panel: each commentary line lights up its run through stats → tactics →
-   narrator → persona, with the path each agent took (rules, LLM, skipped, fallback) and its latency, plus running
-   totals and the tools the Ask agent just called.
-3. Switch **Analyst** to see each line's director brief, the "why" behind it and the agent trace.
-4. Open the **DATA** tab for the raw feed, live charts and tracking table.
+1. Open the live demo, pick a language and **Fan**, **Broadcaster** or **Analyst**, press **Kick off** (sound on;
+   browsers only allow audio after that click).
+2. When a ⚽ or 🧤 appears on the **Key moments** timeline, click it: the explainer agent replays the move with
+   telestration and talks you through it.
+3. Press **🎬 Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
+   explainer agents.
+4. Watch the **Agent team · live** panel (Broadcaster or Analyst) for each line's run through the agents.
 5. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
-6. Pick a player in **Follow a player** for the follow camera and player panel; press **Generate** for a recap.
+6. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **⚙ Setup** has match and plugin
+   controls.
 
 No login is needed.
 

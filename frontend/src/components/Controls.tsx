@@ -1,4 +1,4 @@
-import type { MatchMeta, Persona, PluginInfo, Side } from "../types";
+import type { MatchMeta, Persona, Side } from "../types";
 
 const LANGUAGES = [
   ["en", "English"],
@@ -18,12 +18,9 @@ interface Props {
   speed: number;
   t: number;
   onControl: (msg: object) => void;
-  available: PluginInfo[];
-  enabled: string[];
-  onPlugins: (enabled: string[]) => void;
 }
 
-export function Controls({ meta, persona, onPersona, paused, speed, t, onControl, available, enabled, onPlugins }: Props) {
+export function Controls({ meta, persona, onPersona, paused, speed, t, onControl }: Props) {
   const total = meta.minutes * 60;
   return (
     <div className="controls">
@@ -44,16 +41,13 @@ export function Controls({ meta, persona, onPersona, paused, speed, t, onControl
           value={t}
           onChange={(e) => onControl({ action: "seek", t: Number(e.target.value) })}
           className="seek"
+          aria-label="Match clock"
         />
+        <span className="muted seek-label">
+          {Math.floor(t / 60)}' / {meta.minutes}'
+        </span>
       </div>
       <div className="control-group">
-        <div className="segmented">
-          {(["casual", "analyst"] as const).map((m) => (
-            <button key={m} className={persona.mode === m ? "active" : ""} onClick={() => onPersona({ mode: m })}>
-              {m === "casual" ? "Casual fan" : "Analyst"}
-            </button>
-          ))}
-        </div>
         <select value={persona.language} onChange={(e) => onPersona({ language: e.target.value })}>
           {LANGUAGES.map(([code, label]) => (
             <option key={code} value={code}>
@@ -77,18 +71,6 @@ export function Controls({ meta, persona, onPersona, paused, speed, t, onControl
             </option>
           ))}
         </select>
-      </div>
-      <div className="control-group plugins">
-        {available.map((p) => (
-          <label key={p.name} title={p.description}>
-            <input
-              type="checkbox"
-              checked={enabled.includes(p.name)}
-              onChange={(e) => onPlugins(e.target.checked ? [...enabled, p.name] : enabled.filter((n) => n !== p.name))}
-            />
-            {p.name}
-          </label>
-        ))}
       </div>
     </div>
   );

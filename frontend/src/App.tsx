@@ -14,16 +14,20 @@ import { PlayerFocus } from "./components/PlayerFocus";
 import { RecapPanel } from "./components/RecapPanel";
 import { ReplayTheater } from "./components/ReplayTheater";
 import { StatsPanel } from "./components/StatsPanel";
+import { AUDIENCES, loadAudience, saveAudience, type Audience, type View } from "./audience";
 import type { Moment, Persona, Program, ReplayItem, TraceStep } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
 import { useVoice } from "./useVoice";
 
-const DEFAULT_PERSONA: Persona = { mode: "casual", language: "en", favorite_team: null, favorite_player: null };
+const START_AUDIENCE = loadAudience();
+const DEFAULT_PERSONA: Persona = { mode: AUDIENCES[START_AUDIENCE].mode, language: "en", favorite_team: null, favorite_player: null };
 
 export default function App() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [persona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
-  const [view, setView] = useState<"2d" | "3d" | "both" | "data">("both");
+  const [audience, setAudienceState] = useState<Audience>(START_AUDIENCE);
+  const [view, setView] = useState<View>(AUDIENCES[START_AUDIENCE].view);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [model, setModel] = useState<string | null>(null);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
@@ -115,6 +119,12 @@ export default function App() {
     setPersona(next);
     send({ type: "persona", persona: next });
   };
+  const setAudience = (a: Audience) => {
+    setAudienceState(a);
+    saveAudience(a);
+    setView(AUDIENCES[a].view);
+    updatePersona({ mode: AUDIENCES[a].mode });
+  };
 
   const control = (msg: { action?: string; t?: number; speed?: number }) => {
     if (msg.action === "seek") clearNarrations();
@@ -126,15 +136,19 @@ export default function App() {
 
   const clock = frame ? `${Math.floor(frame.t / 60)}:${String(Math.floor(frame.t % 60)).padStart(2, "0")}` : "0:00";
 
+  const live = !state.ended && !state.paused;
+  const cfg = AUDIENCES[audience];
+
   return (
-    <div className="app">
+    <div className={`app audience-${audience}`}>
       {!kickedOff && (
         <Kickoff
           meta={meta}
           persona={persona}
           voiceAvailable={voiceAvailable}
           onLanguage={(language) => updatePersona({ language })}
-          onMode={(mode) => updatePersona({ mode })}
+          audience={audience}
+          onAudience={setAudience}
           onKickoff={() => {
             setVoiceOn(voiceAvailable);
             setKickedOff(true);
@@ -143,7 +157,9 @@ export default function App() {
         />
       )}
       <header>
-        <div className="brand">Inside the Game · Match Intelligence</div>
+        <div className="brand">
+          <span className="brand-mark">◆</span> Inside the Game
+        </div>
         <div className="scoreboard">
           <span className="team" style={{ color: meta.teams.home.color }}>{meta.teams.home.name}</span>
           <span className="score">
@@ -151,10 +167,19 @@ export default function App() {
           </span>
           <span className="team" style={{ color: meta.teams.away.color }}>{meta.teams.away.name}</span>
           <span className="clock">{clock}</span>
-          {state.ended && <span className="chip">FT</span>}
+          {state.ended ? <span className="chip">FT</span> : live && <span className="live-dot">LIVE</span>}
           {!state.connected && <span className="chip warn">offline</span>}
-          <span className={`ai-badge ${model ? "on" : ""}`} title="Live commentary, explanations and answers are written by this model">
-            {model ? `AI live · Azure OpenAI ${model}` : "AI offline · rule templates"}
+        </div>
+        <div className="segmented audience-switch" role="tablist" aria-label="Who's watching">
+          {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
+            <button key={a} className={audience === a ? "active" : ""} onClick={() => setAudience(a)} title={AUDIENCES[a].blurb}>
+              {AUDIENCES[a].icon} {AUDIENCES[a].label}
+            </button>
+          ))}
+        </div>
+        <div className="header-right">
+          <span className={`ai-badge ${model ? "on" : ""}`} title="Commentary, explanations, replays and answers are written by this model">
+            {model ? `AI · ${model}` : "AI offline · templates"}
           </span>
           {voiceAvailable && (
             <button
@@ -162,40 +187,76 @@ export default function App() {
               onClick={() => setVoiceOn((v) => !v)}
               title="Spoken AI commentary (Azure AI Speech neural voice, in your language)"
             >
-              {voiceOn ? (speaking ? "🔊 Commentating…" : "🔊 Commentary on") : "🔇 Commentary muted"}
+              {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔇 Voice off"}
             </button>
           )}
+          <button className={`setup-btn ${setupOpen ? "on" : ""}`} onClick={() => setSetupOpen((o) => !o)} aria-expanded={setupOpen}>
+            ⚙ Setup
+          </button>
         </div>
-        <div className="segmented">
-          {(["2d", "3d", "both", "data"] as const).map((v) => (
+      </header>
+      {setupOpen && (
+        <div className="setup-drawer">
+          <div className="setup-group">
+            <h4>Match</h4>
+            <MatchPicker
+              matches={matches}
+              current={matchId}
+              onSelect={setMatchId}
+              onCreated={(list, id) => {
+                setMatches(list);
+                setMatchId(id);
+              }}
+            />
+          </div>
+          <div className="setup-group">
+            <h4>Analytics plugins</h4>
+            <div className="plugin-toggles">
+              {state.available.map((p) => (
+                <label key={p.name} title={p.description}>
+                  <input
+                    type="checkbox"
+                    checked={state.enabled.includes(p.name)}
+                    onChange={(e) =>
+                      send({ type: "plugins", enabled: e.target.checked ? [...state.enabled, p.name] : state.enabled.filter((n) => n !== p.name) })
+                    }
+                  />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="setup-group">
+            <h4>Commentary style</h4>
+            <div className="segmented">
+              {(["casual", "analyst"] as const).map((m) => (
+                <button key={m} className={persona.mode === m ? "active" : ""} onClick={() => updatePersona({ mode: m })}>
+                  {m === "casual" ? "Casual" : "Tactical"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="toolbar">
+        <Controls
+          meta={meta}
+          persona={persona}
+          onPersona={updatePersona}
+          paused={state.paused}
+          speed={state.speed}
+          t={frame?.t ?? 0}
+          onControl={(m) => control(m)}
+        />
+        <div className="segmented view-switch">
+          {cfg.views.map((v) => (
             <button key={v} className={view === v ? "active" : ""} onClick={() => setView(v)}>
               {v.toUpperCase()}
             </button>
           ))}
         </div>
-        <MatchPicker
-          matches={matches}
-          current={matchId}
-          onSelect={setMatchId}
-          onCreated={(list, id) => {
-            setMatches(list);
-            setMatchId(id);
-          }}
-        />
-      </header>
-
-      <Controls
-        meta={meta}
-        persona={persona}
-        onPersona={updatePersona}
-        paused={state.paused}
-        speed={state.speed}
-        t={frame?.t ?? 0}
-        onControl={(m) => control(m)}
-        available={state.available}
-        enabled={state.enabled}
-        onPlugins={(enabled) => send({ type: "plugins", enabled })}
-      />
+      </div>
 
       <MomentsBar
         meta={meta}
@@ -216,7 +277,7 @@ export default function App() {
       )}
 
       <main>
-        {view === "data" && (
+        {view === "data" && cfg.views.includes("data") && (
           <section className="views data">
             <DataView
               meta={meta}
@@ -235,7 +296,7 @@ export default function App() {
             />
           </section>
         )}
-        {view !== "data" && (
+        {(view !== "data" || !cfg.views.includes("data")) && (
         <section className={`views ${view}`}>
           {view !== "3d" && (
             <div className="view view2d">
@@ -263,10 +324,10 @@ export default function App() {
           )}
           <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} model={model} />
         </aside>
-        <section className="bottom">
+        <section className={`bottom bottom-${audience}`}>
           <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
-          <RecapPanel matchId={meta.match_id} persona={persona} />
-          <AgentOps agents={state.agents} narrations={state.narrations} answers={state.answers} />
+          {audience !== "fan" && <RecapPanel matchId={meta.match_id} persona={persona} />}
+          {audience !== "fan" && <AgentOps agents={state.agents} narrations={state.narrations} answers={state.answers} />}
         </section>
       </main>
     </div>

@@ -1,3 +1,4 @@
+import { AUDIENCES, type Audience } from "../audience";
 import type { MatchMeta, Persona } from "../types";
 
 const LANGUAGES: [string, string][] = [
@@ -15,12 +16,13 @@ interface Props {
   persona: Persona;
   voiceAvailable: boolean;
   onLanguage: (language: string) => void;
-  onMode: (mode: Persona["mode"]) => void;
+  audience: Audience;
+  onAudience: (a: Audience) => void;
   onKickoff: () => void;
 }
 
 /** Pre-match screen: choose language and style, then one click starts the match with live spoken commentary. */
-export function Kickoff({ meta, persona, voiceAvailable, onLanguage, onMode, onKickoff }: Props) {
+export function Kickoff({ meta, persona, voiceAvailable, onLanguage, audience, onAudience, onKickoff }: Props) {
   return (
     <div className="kickoff">
       <div className="kickoff-card">
@@ -45,13 +47,16 @@ export function Kickoff({ meta, persona, voiceAvailable, onLanguage, onMode, onK
               ))}
             </select>
           </label>
-          <div className="segmented">
-            {(["casual", "analyst"] as const).map((m) => (
-              <button key={m} className={persona.mode === m ? "active" : ""} onClick={() => onMode(m)}>
-                {m === "casual" ? "Casual fan" : "Analyst"}
-              </button>
-            ))}
-          </div>
+        </div>
+        <div className="kickoff-who">Who's watching?</div>
+        <div className="audience-cards">
+          {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
+            <button key={a} className={`audience-card ${audience === a ? "active" : ""}`} onClick={() => onAudience(a)}>
+              <span className="audience-icon">{AUDIENCES[a].icon}</span>
+              <b>{AUDIENCES[a].label}</b>
+              <span>{AUDIENCES[a].blurb}</span>
+            </button>
+          ))}
         </div>
         <button className="kickoff-go" onClick={onKickoff}>
           ▶ Kick off{voiceAvailable ? " with live commentary 🔊" : ""}

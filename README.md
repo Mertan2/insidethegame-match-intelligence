@@ -8,6 +8,16 @@ forecast, and a multi-agent narrator that writes for each viewer.
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 
 What to try:
+- **Explain this moment:** every shot and goal lands on the key moments timeline. Click one and the explainer agent
+  replays it like a TV analyst at the telestrator: the move is drawn from tracking (how the ball was won, the passes,
+  the key pass and how many defenders it took out, the space at the shot), the replay freezes on each beat and the
+  analyst says it out loud, in the viewer's language.
+- **🎬 Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent
+  ranks the moments, one explainer per clip runs in parallel, the producer writes the intro and outro, and the reel
+  plays narrated with clip cards and slow motion at the shot.
+- **Fan / Broadcaster / Analyst:** who is watching sets the commentary style and the screen (fans get voice, Ask
+  and highlights; broadcasters get talking points with the why, graphics cues and the agent panel; analysts also
+  get the raw-data tab). Match and plugin controls live under **⚙ Setup**.
 - **DATA tab:** the raw feed made visible. Live throughput (messages/s, KB/s), xG race, possession, momentum and
   ball-speed charts building second by second, a 22-player tracking table (position, live speed, foot heights)
   and the event stream as it arrives.
@@ -56,9 +66,14 @@ flowchart TB
     end
     SCHED --> A1
     ASK["Ask agent<br/>function calling over<br/>6 live-data tools"]
+    KM["Key moments<br/>build-up, key pass,<br/>shot context"] --> PROD["Producer agent<br/>picks clips"]
+    PROD -- "fan-out" --> EXP["Explainer agents<br/>one per clip, in parallel"]
+    EXP -- "fan-in" --> PROD2["Producer agent<br/>intro + outro"]
+    PROD2 --> THEATER["Replay theatre<br/>telestration + voice"]
     RECAP["Recap agent"]
     AOAI["Azure OpenAI<br/>gpt-4.1-mini"]
-    A2 & A3 & A4 & ASK & RECAP --> AOAI
+    A2 & A3 & A4 & ASK & RECAP & EXP --> AOAI
+    REPLAY --> KM
     A4 --> WS["WebSocket feed"]
     ASK --> WS
     Plugins --> WS
@@ -163,7 +178,8 @@ Broadcast cues: `GET /api/matches/{id}/overlays` returns the full timeline of gr
 | `backend/app/pipeline.py` | Runs enabled plugins per frame; toggling a plugin on catches it up on the match so far |
 | `backend/app/plugins/` | `stats`, `pass_quality`, `speed_metrics`, `ball_forecast`, `momentum`, `overlays` |
 | `backend/app/agents/` | Microsoft Agent Framework agents + workflow over a shared blackboard, recap; `llm.py` holds the Foundry client |
-| `backend/app/main.py` | REST + `WS /ws/live/{match_id}` |
+| `backend/app/moments.py` | Key moments from events + tracking: build-up, key pass, shot context, replay windows |
+| `backend/app/main.py` | REST + `WS /ws/live/{match_id}`; `/moments`, `/moments/{id}/explain`, `/highlights` |
 | `frontend/src/` | React app: `Pitch2D` (canvas), `Ball3D` (react-three-fiber), stats, live narrative, recap |
 
 ### Add a plugin
