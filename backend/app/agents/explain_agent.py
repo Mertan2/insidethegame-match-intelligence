@@ -69,6 +69,11 @@ def _fact(step: dict[str, Any], names: dict[str, str]) -> dict[str, Any]:
             out.pop(key, None)
     if step.get("keeper"):
         out["keeper_off_line_m"] = step["keeper"]["off_line_m"]
+    if "progress_m" in out:  # a signed number reads badly ("covers -6.4 m"): say which way the ball went
+        gain = out.pop("progress_m")
+        out["direction"] = "forward" if gain > 1 else ("backward" if gain < -1 else "square")
+        if abs(gain) > 1:
+            out[f"metres_{'gained' if gain > 0 else 'back'}"] = round(abs(gain), 1)
     return out
 
 
