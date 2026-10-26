@@ -53,7 +53,9 @@ function momentFor(n: Narration | undefined, moments: Moment[]): Moment | undefi
 export function Studio(props: Props) {
   const { meta, frame, plugins, narrations, persona, moments, paused, ended, speed, speaking, voiceOn, voiceAvailable, drill, busy } = props;
   const latest = narrations[0];
-  const moment = momentFor(latest, moments);
+  // The last key moment stays explainable for a while, even once the caption has moved on.
+  const recent = narrations.slice(0, 8).map((n) => momentFor(n, moments)).find((m) => m && (frame?.t ?? 0) - m.t < 90);
+  const moment = momentFor(latest, moments) ?? recent;
   const clock = frame ? `${Math.floor(frame.t / 60)}:${String(Math.floor(frame.t % 60)).padStart(2, "0")}` : "0:00";
   const team = latest?.team ? meta.teams[latest.team] : null;
   const steps = (latest?.trace ?? []).filter((s) => s.path !== undefined);
@@ -136,7 +138,7 @@ export function Studio(props: Props) {
                 {team && <span className="studio-team">{team.name}</span>}
                 {moment && (
                   <button className="explain-btn studio-explain" onClick={() => props.onExplain(moment)} disabled={busy !== null}>
-                    ▶ Replay & explain
+                    ▶ Replay & explain {moment.minute}' {moment.kind}
                   </button>
                 )}
               </div>

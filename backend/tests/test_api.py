@@ -54,3 +54,12 @@ def test_tts_reports_unconfigured_and_builds_ssml(client, monkeypatch):
     assert "rate='+0%'" in Speech.ssml("Quiet spell.", "tr", excited=False)  # routine lines at natural speed
     hd = Speech.ssml("GOAL!", "en", excited=True)  # HD voice: pace and tone come from the text, no prosody
     assert "DragonHD" in hd and "prosody" not in hd
+
+
+def test_explain_depth_short_has_fewer_beats(client):
+    match_id = client.get("/api/matches").json()[0]["match_id"]
+    moment = client.get(f"/api/matches/{match_id}/moments").json()[0]
+    full = client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain").json()
+    short = client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=short").json()
+    assert 0 < len(short["beats"]) <= len(full["beats"])
+    assert client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=huge").status_code == 422

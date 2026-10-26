@@ -7,7 +7,7 @@ import contextlib
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -201,11 +201,11 @@ def moments(match_id: str, upto: float | None = None) -> list[dict]:
     return [m for m in _moments(_match(match_id)) if upto is None or m["t"] <= upto]
 
 
-async def _explained(match: Match, moment: dict, persona: Persona) -> dict:
-    key = ("explain", match.meta.match_id, moment["id"], persona.model_dump_json())
+async def _explained(match: Match, moment: dict, persona: Persona, depth: str = "full") -> dict:
+    key = ("explain", match.meta.match_id, moment["id"], persona.model_dump_json(), depth)
     if key not in _explain_cache:
-        with telemetry.span("explain", **{"moment.id": moment["id"], "moment.kind": moment["kind"]}):
-            out = await explain(llm, match.meta, moment, persona, "full")
+        with telemetry.span("explain", **{"moment.id": moment["id"], "moment.kind": moment["kind"], "depth": depth}):
+            out = await explain(llm, match.meta, moment, persona, depth)
         out["frames"] = frames_between(match, moment["start"], moment["end"])
         if not clean(out["trace"]):
             return out
@@ -252,14 +252,17 @@ async def _prewarm(match: Match) -> None:
 
 
 @app.get("/api/matches/{match_id}/moments/{moment_id}/explain")
-async def explain_moment(request: Request, match_id: str, moment_id: str, mode: str = "casual", lang: str = "en") -> dict:
+async def explain_moment(
+    request: Request, match_id: str, moment_id: str, mode: str = "casual", lang: str = "en",
+    depth: Literal["full", "short"] = Query(default="full", description="full: the whole build-up; short: the key pass and the shot"),
+) -> dict:
     """The explainer agent breaks one moment down into beats for the replay telestrator."""
     ratelimit.check(request, "ai")
     match = _match(match_id)
     moment = next((m for m in _moments(match) if m["id"] == moment_id), None)
     if moment is None:
         raise HTTPException(404, f"Unknown moment {moment_id}")
-    return await _explained(match, moment, Persona(mode=mode, language=lang))
+    return await _explained(match, moment, Persona(mode=mode, language=lang), depth)
 
 
 @app.get("/api/matches/{match_id}/highlights")

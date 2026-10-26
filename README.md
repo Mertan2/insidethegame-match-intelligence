@@ -17,6 +17,13 @@ forecast, and a multi-agent narrator that writes for each viewer.
 | ![Who's watching: Fan, Broadcaster, Analyst](docs/img/kickoff.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
 
 What to try:
+- **📺 Studio mode:** the output as a broadcast or stream would carry it. Full-screen pitch, the score bug, the
+  graphics cues from the overlays plugin (goal, big chance, "ON TARGET", pass rating, game state), the commentary
+  as a lower-third caption with a **Replay & explain** button on goals and chances, and a strip showing which
+  agent wrote the line and by which path. No dashboard chrome; Esc returns to it.
+- **Outage drill:** in the **Agent team · live** panel (Broadcaster or Analyst), kill any agent in the chain
+  while the match is on. Every call to it fails; the chain routes around it on the deterministic template, the
+  trace records the fallback, and the line still goes out. Failure recovery, shown live rather than claimed.
 - **Explain this moment:** every shot and goal lands on the key moments timeline. Click one and the explainer agent
   replays it like a TV analyst at the telestrator: the move is drawn from tracking (how the ball was won, the passes,
   the key pass and how many defenders it took out, the space at the shot), the replay freezes on each beat and the
@@ -94,7 +101,9 @@ flowchart TB
 ```
 
 Every agent runs with a timeout and a deterministic template fallback, and each narration carries a trace of
-which agent ran, by which path and how long it took. Everything runs in one Azure Container Apps container.
+which agent ran, by which path and how long it took. The **outage drill** (agent panel, or `{"type": "drill",
+"agents": ["tactics"]}` on the WebSocket) fails a named agent on purpose so the fallback can be watched live.
+Everything runs in one Azure Container Apps container.
 
 **Tracing:** with `APPLICATIONINSIGHTS_CONNECTION_STRING` set, each narration, agent step (path, fallback,
 latency), Ask question, tool call and voice request is an OpenTelemetry span in Azure Application Insights, with
@@ -111,7 +120,7 @@ the Azure OpenAI and Speech calls as child dependencies (`app/telemetry.py`). Un
 | Auto-eventing | Speed, distance, sprints, fatigue and ball speed computed from raw tracking, not tagged events (no video in the data) |
 | Narrative generation: narratives, player context, milestones, recaps | Director briefs → agent chain; player-focus mode; half/full-time recaps; highlights package |
 | Explainability: control vs chaos, pressure changes, rhythm | `momentum` plugin (chaos index, swings), tactics agent, explain-this-moment telestration |
-| Render: on-screen, timed machine-readable overlays | 2D/3D views, replay theatre, `GET /api/matches/{id}/overlays` cue timeline |
+| Render: on-screen, timed machine-readable overlays | **Studio mode** (broadcast output), 2D/3D views, replay theatre, `GET /api/matches/{id}/overlays` cue timeline |
 | Personalise: modes, favourite club/player, player-focused mode, a single metric a viewer cares about, language | Fan / Broadcaster / Analyst, casual/tactical, favourites, follow-a-player camera, **Metric I care about** (live ranking + commentary keeps that number), 7 languages voiced |
 | Data innovation | Own generator: 3D ball, foot positions, headers, fatigue, full event stream, any seed/length |
 

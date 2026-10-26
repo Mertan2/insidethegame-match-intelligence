@@ -51,9 +51,11 @@ clock.
 3. **Explain:** a physics ball-flight forecast (gravity, drag, spin, bounce) predicts landing points and goal-line
    crossings and is scored against reality (about 0.1–0.2 m error one second ahead); the agents explain why each
    moment matters.
-4. **Render:** 2D tactical and 3D views, broadcast graphics (lower thirds, "ON TARGET" calls, fun-fact cards) also
-   exported as a timed, machine-readable cue timeline for a graphics engine, and a DATA tab showing the raw feed,
-   live charts and a 22-player tracking table.
+4. **Render:** a **Studio mode** that shows the output as a broadcast or stream would carry it (full-screen
+   pitch, score bug, graphics cues, the commentary as a lower-third caption, the agent strip), 2D tactical and 3D
+   views, broadcast graphics (lower thirds, "ON TARGET" calls, fun-fact cards) also exported as a timed,
+   machine-readable cue timeline for a graphics engine, and a DATA tab showing the raw feed, live charts and a
+   22-player tracking table.
 5. **Personalise:** casual vs analyst, favourite club, a player-focus mode (camera, stats and commentary follow one
    player), a metric-focus mode (the one number you care about, live and in the commentary), 7 languages, spoken by
    neural voices.
@@ -103,9 +105,11 @@ clock.
   to read, stale play is never described.
 - **Grounding.** Numbers come only from the deterministic stats layer; language-model agents phrase, explain and
   translate, and are told the score and what each goal did ("equaliser", "takes the lead") so they cannot invent it.
-- **Recovering from failure.** Every agent runs with a timeout and a deterministic template fallback; each narration
-  carries a trace of which agent ran, by which path and how long it took (shown live in the Agent team panel and in analyst mode), so one failing
-  model call never silences the broadcast.
+- **Recovering from failure, shown live.** Every agent runs with a timeout and a deterministic template fallback;
+  each narration carries a trace of which agent ran, by which path and how long it took (shown live in the Agent
+  team panel and in analyst mode), so one failing model call never silences the broadcast. The **outage drill**
+  in the agent panel kills any agent in the chain on demand: the chain routes around it, the trace records the
+  fallback and every line still goes out. Judges can try it, not just read about it.
 - **Observable in production.** Every narration, agent step (path, fallback, latency), Ask question, tool call and
   voice request is an OpenTelemetry span in Azure Application Insights, with the Azure OpenAI and Speech calls
   underneath as dependencies, so you can see which agent is slow or falling back on the live deployment.
@@ -122,7 +126,7 @@ clock.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (55 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (56 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
@@ -143,9 +147,11 @@ a production graphics path.
    telestration and talks you through it.
 3. Press **🎬 Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
    explainer agents.
-4. Watch the **Agent team · live** panel (Broadcaster or Analyst) for each line's run through the agents.
-5. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
-6. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **⚙ Setup** has match and plugin
+4. Watch the **Agent team · live** panel (Broadcaster or Analyst) for each line's run through the agents, then
+   press **kill tactics** in its outage drill: the next lines still arrive, with the fallback in the trace.
+5. Press **📺 Studio** in the header for the broadcast output (Esc to come back).
+6. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
+7. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **⚙ Setup** has match and plugin
    controls.
 
 No login is needed.
