@@ -20,7 +20,7 @@ from .base import Agent, Persona
 from .orchestrator import run_step
 
 LANGUAGE_NAMES = {"en": "English", "tr": "Turkish", "es": "Spanish", "fr": "French", "de": "German", "pt": "Portuguese", "ar": "Arabic"}
-MAX_PASS_BEATS = {"full": 3, "short": 1}
+MAX_PASS_BEATS = {"full": 3, "quick": 1, "short": 1}  # quick: key pass, shot and the verdict
 
 
 @dataclass
@@ -147,7 +147,7 @@ class ExplainAgent(Agent):
         scorer = bb.names.get(m["player_id"], "")
         headline = {"goal": f"{scorer} scores for {team}", "save": f"{scorer} denied", "miss": f"{scorer} goes close"}[m["kind"]]
         verdict = ""
-        if bb.mode == "full":
+        if bb.mode != "short":
             reasons = []
             if m["passes"] >= 5:
                 reasons.append(f"a patient {m['passes']}-pass move")
@@ -190,7 +190,7 @@ class ExplainAgent(Agent):
             b["text"] = line
         bb.output = {
             "headline": str(data.get("headline") or "").strip(),
-            "verdict": str(data.get("verdict") or "").strip() if bb.mode == "full" else "",
+            "verdict": str(data.get("verdict") or "").strip() if bb.mode != "short" else "",
             "language": bb.persona.language,
         }
 

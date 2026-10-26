@@ -61,5 +61,7 @@ def test_explain_depth_short_has_fewer_beats(client):
     moment = client.get(f"/api/matches/{match_id}/moments").json()[0]
     full = client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain").json()
     short = client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=short").json()
-    assert 0 < len(short["beats"]) <= len(full["beats"])
+    quick = client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=quick").json()
+    assert 0 < len(short["beats"]) <= len(quick["beats"]) <= len(full["beats"])
+    assert short["verdict"] == "" and quick["verdict"]
     assert client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=huge").status_code == 422
