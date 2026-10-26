@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Ball3D } from "./components/Ball3D";
 import { AgentOps } from "./components/AgentOps";
 import { AskPanel } from "./components/AskPanel";
+import { Broadcast } from "./components/Broadcast";
 import { CommentaryFeed } from "./components/CommentaryFeed";
-import { Controls } from "./components/Controls";
 import { DataView } from "./components/DataView";
+import { BrandMark, Icon } from "./components/Icon";
 import { Kickoff } from "./components/Kickoff";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
 import { MetricFocus } from "./components/MetricFocus";
@@ -16,20 +16,32 @@ import { RecapPanel } from "./components/RecapPanel";
 import { ReplayTheater } from "./components/ReplayTheater";
 import { StatsPanel } from "./components/StatsPanel";
 import { Studio } from "./components/Studio";
-import { BrandMark, Icon } from "./components/Icon";
-import { AUDIENCES, loadAudience, saveAudience, type Audience, type View } from "./audience";
-import type { Moment, Persona, Program, ReplayItem, TraceStep } from "./types";
+import { AUDIENCES, loadAudience, saveAudience, type Audience } from "./audience";
+import { FOCUS_METRICS, type FocusMetric, type Moment, type Persona, type Program, type ReplayItem, type Side, type TraceStep } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
 import { useVoice } from "./useVoice";
 
 const START_AUDIENCE = loadAudience();
 const DEFAULT_PERSONA: Persona = { mode: AUDIENCES[START_AUDIENCE].mode, language: "en", favorite_team: null, favorite_player: null };
 
+const LANGUAGES = [
+  ["en", "English"],
+  ["es", "Español"],
+  ["tr", "Türkçe"],
+  ["fr", "Français"],
+  ["de", "Deutsch"],
+  ["pt", "Português"],
+  ["ar", "العربية"],
+];
+
+type Screen = "watch" | "crew" | "data";
+
 export default function App() {
   const [matchId, setMatchId] = useState<string | null>(null);
   const [persona, setPersona] = useState<Persona>(DEFAULT_PERSONA);
   const [audience, setAudienceState] = useState<Audience>(START_AUDIENCE);
-  const [view, setView] = useState<View>(AUDIENCES[START_AUDIENCE].view);
+  const [screen, setScreen] = useState<Screen>("watch");
+  const [view, setView] = useState<"2d" | "3d">("2d");
   const [setupOpen, setSetupOpen] = useState(false);
   const [studio, setStudio] = useState(false);
   const [model, setModel] = useState<string | null>(null);
@@ -138,7 +150,6 @@ export default function App() {
   const setAudience = (a: Audience) => {
     setAudienceState(a);
     saveAudience(a);
-    setView(AUDIENCES[a].view);
     updatePersona({ mode: AUDIENCES[a].mode });
   };
 
@@ -155,12 +166,66 @@ export default function App() {
   if (!meta) return <div className="loading">{matchId ? "Connecting to live feed…" : "Loading match…"}</div>;
 
   const clock = frame ? `${Math.floor(frame.t / 60)}:${String(Math.floor(frame.t % 60)).padStart(2, "0")}` : "0:00";
-
   const live = !state.ended && !state.paused;
-  const cfg = AUDIENCES[audience];
+  const t = frame?.t ?? 0;
+  const total = meta.minutes * 60;
+
+  const broadcastProps = {
+    meta,
+    frame,
+    plugins: state.plugins,
+    narrations: state.narrations,
+    persona,
+    moments,
+    paused: state.paused,
+    ended: state.ended,
+    drill: state.drill,
+    busy,
+    view,
+    onExplain: explainMoment,
+  };
+
+  const transport = (
+    <div className="transport">
+      <button className="transport-play" onClick={() => control({ action: state.paused ? "play" : "pause" })} disabled={state.ended}>
+        {state.paused ? <><Icon name="play" /> Play</> : <><Icon name="pause" /> Pause</>}
+      </button>
+      <select value={state.speed} onChange={(e) => control({ speed: Number(e.target.value) })} aria-label="Speed">
+        {[1, 2, 4, 8, 16, 32].map((s) => (
+          <option key={s} value={s}>
+            {s}x
+          </option>
+        ))}
+      </select>
+      <input
+        type="range"
+        min={0}
+        max={total}
+        step={5}
+        value={t}
+        onChange={(e) => control({ action: "seek", t: Number(e.target.value) })}
+        className="seek"
+        aria-label="Match clock"
+      />
+      <span className="muted seek-label">
+        {Math.floor(t / 60)}' / {meta.minutes}'
+      </span>
+      <span className="transport-gap" />
+      <div className="segmented view-switch">
+        {(["2d", "3d"] as const).map((v) => (
+          <button key={v} className={view === v ? "active" : ""} onClick={() => setView(v)}>
+            {v.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <button className="studio-btn" onClick={() => setStudio(true)} title="Full-screen broadcast output (Esc to come back)">
+        <Icon name="studio" /> Studio
+      </button>
+    </div>
+  );
 
   return (
-    <div className={`app audience-${audience}`}>
+    <div className={`app audience-${audience} screen-${screen}`}>
       {!kickedOff && (
         <Kickoff
           meta={meta}
@@ -190,13 +255,19 @@ export default function App() {
           {state.ended ? <span className="chip">FT</span> : live && <span className="live-dot">LIVE</span>}
           {!state.connected && <span className="chip warn">offline</span>}
         </div>
-        <div className="segmented audience-switch" role="tablist" aria-label="Who's watching">
-          {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
-            <button key={a} className={audience === a ? "active" : ""} onClick={() => setAudience(a)} title={AUDIENCES[a].blurb}>
-              <Icon name={AUDIENCES[a].icon} /> {AUDIENCES[a].label}
+        <nav className="nav" aria-label="Screens">
+          {(
+            [
+              ["watch", "Watch", "The broadcast, personalised for you"],
+              ["crew", "Crew", "The agent team at work: handoffs, traces, outage drill"],
+              ["data", "Data", "The raw feed, live metrics and tracking"],
+            ] as [Screen, string, string][]
+          ).map(([s, label, title]) => (
+            <button key={s} className={screen === s ? "active" : ""} onClick={() => setScreen(s)} title={title}>
+              {label}
             </button>
           ))}
-        </div>
+        </nav>
         <div className="header-right">
           <span className={`ai-badge ${model ? "on" : ""}`} title="Commentary, explanations, replays and answers are written by this model">
             {model ? `AI · ${model}` : "AI offline · templates"}
@@ -210,10 +281,7 @@ export default function App() {
               <Icon name={voiceOn ? "voice" : "voiceOff"} /> {voiceOn ? (speaking ? "Speaking…" : "Voice on") : "Voice off"}
             </button>
           )}
-          <button className="studio-btn" onClick={() => setStudio(true)} title="Full-screen broadcast output: pitch, graphics cues and the commentary as captions">
-            <Icon name="studio" /> Studio
-          </button>
-          <button className={`setup-btn ${setupOpen ? "on" : ""}`} onClick={() => setSetupOpen((o) => !o)} aria-expanded={setupOpen}>
+          <button className={`setup-btn ${setupOpen ? "on" : ""}`} onClick={() => setSetupOpen((o) => !o)} aria-expanded={setupOpen} title="Match, analytics plugins, commentary style">
             <Icon name="settings" /> Setup
           </button>
         </div>
@@ -262,34 +330,6 @@ export default function App() {
         </div>
       )}
 
-      <div className="toolbar">
-        <Controls
-          meta={meta}
-          persona={persona}
-          onPersona={updatePersona}
-          paused={state.paused}
-          speed={state.speed}
-          t={frame?.t ?? 0}
-          onControl={(m) => control(m)}
-        />
-        <div className="segmented view-switch">
-          {cfg.views.map((v) => (
-            <button key={v} className={view === v ? "active" : ""} onClick={() => setView(v)}>
-              {v.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <MomentsBar
-        meta={meta}
-        moments={moments}
-        now={frame?.t ?? 0}
-        ended={state.ended}
-        busy={busy}
-        onExplain={explainMoment}
-        onHighlights={highlightsSoFar}
-      />
       {state.ended && !program && !busy && moments.length > 0 && !ftDismissed && (
         <div className="ft-prompt">
           <span>
@@ -313,30 +353,136 @@ export default function App() {
       )}
       {studio && kickedOff && (
         <Studio
-          meta={meta}
-          frame={frame}
-          plugins={state.plugins}
-          narrations={state.narrations}
-          persona={persona}
-          moments={moments}
-          paused={state.paused}
-          ended={state.ended}
+          {...broadcastProps}
           speed={state.speed}
           speaking={speaking !== null}
           voiceOn={voiceOn}
           voiceAvailable={voiceAvailable}
-          drill={state.drill}
-          busy={busy}
           onControl={control}
           onVoice={() => setVoiceOn((v) => !v)}
-          onExplain={explainMoment}
           onHighlights={highlightsSoFar}
           onExit={() => setStudio(false)}
         />
       )}
 
-      <main>
-        {view === "data" && cfg.views.includes("data") && (
+      {screen === "watch" && (
+        <main className="watch">
+          <section className="watch-stage">
+            <Broadcast {...broadcastProps} />
+            {transport}
+            <MomentsBar meta={meta} moments={moments} now={t} ended={state.ended} busy={busy} onExplain={explainMoment} onHighlights={highlightsSoFar} />
+          </section>
+          <aside className="rail">
+            <div className="panel you">
+              <h3>
+                You
+                <span className="ops-sum">{AUDIENCES[audience].blurb}</span>
+              </h3>
+              <div className="segmented audience-switch" role="tablist" aria-label="Who's watching">
+                {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
+                  <button key={a} className={audience === a ? "active" : ""} onClick={() => setAudience(a)} title={AUDIENCES[a].blurb}>
+                    <Icon name={AUDIENCES[a].icon} /> {AUDIENCES[a].label}
+                  </button>
+                ))}
+              </div>
+              <div className="you-grid">
+                <label>
+                  <span>Language</span>
+                  <select value={persona.language} onChange={(e) => updatePersona({ language: e.target.value })}>
+                    {LANGUAGES.map(([code, label]) => (
+                      <option key={code} value={code}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Your club</span>
+                  <select value={persona.favorite_team ?? ""} onChange={(e) => updatePersona({ favorite_team: (e.target.value || null) as Side | null })}>
+                    <option value="">No favourite club</option>
+                    <option value="home">{meta.teams.home.name}</option>
+                    <option value="away">{meta.teams.away.name}</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Your player</span>
+                  <select value={persona.favorite_player ?? ""} onChange={(e) => updatePersona({ favorite_player: e.target.value || null })}>
+                    <option value="">Follow a player…</option>
+                    {meta.players.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {meta.teams[p.team].short} #{p.number} {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Your metric</span>
+                  <select
+                    value={persona.focus_metric ?? ""}
+                    onChange={(e) => updatePersona({ focus_metric: (e.target.value || null) as FocusMetric | null })}
+                    title="The one metric you care about: it stays on screen and in the commentary"
+                  >
+                    <option value="">Metric I care about…</option>
+                    {FOCUS_METRICS.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+            {persona.focus_metric && <MetricFocus meta={meta} metric={persona.focus_metric} plugins={state.plugins} favoritePlayer={persona.favorite_player} />}
+            {persona.favorite_player && (
+              <PlayerFocus meta={meta} playerId={persona.favorite_player} plugins={state.plugins} narrations={state.narrations} />
+            )}
+            <AskPanel answers={state.answers} asking={state.asking} onAsk={ask} persona={persona} model={model} />
+            <CommentaryFeed meta={meta} narrations={state.narrations} persona={{ ...persona, mode: "casual" }} model={model} moments={moments} onExplain={explainMoment} />
+          </aside>
+        </main>
+      )}
+
+      {screen === "crew" && (
+        <main className="crew">
+          <section className="crew-main">
+            <AgentOps
+              agents={state.agents}
+              narrations={state.narrations}
+              answers={state.answers}
+              drill={state.drill}
+              onDrill={(agents) => send({ type: "drill", agents })}
+            />
+            <div className="panel a2a">
+              <h3>
+                A2A: this analyst as a service
+                <span className="ops-sum">Agent Framework A2AExecutor</span>
+              </h3>
+              <p className="muted small">
+                Other agents call the same team over the Agent2Agent protocol: ask a question, explain a moment, fetch the highlights package.
+              </p>
+              <div className="a2a-rows">
+                <a href="/.well-known/agent-card.json" target="_blank" rel="noreferrer">
+                  <code>GET /.well-known/agent-card.json</code> agent card
+                </a>
+                <span>
+                  <code>POST /a2a</code> JSON-RPC: "explain the goal in the 8th minute", "highlights", "who is tiring?"
+                </span>
+                <span>
+                  <code>GET /api/matches/{"{id}"}/overlays</code> timed, machine-readable graphics cues
+                </span>
+              </div>
+            </div>
+            <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
+            <RecapPanel matchId={meta.match_id} persona={persona} />
+          </section>
+          <aside className="rail">
+            <CommentaryFeed meta={meta} narrations={state.narrations} persona={{ ...persona, mode: "analyst" }} model={model} moments={moments} onExplain={explainMoment} />
+          </aside>
+        </main>
+      )}
+
+      {screen === "data" && (
+        <main className="data-screen">
           <section className="views data">
             <DataView
               meta={meta}
@@ -354,50 +500,9 @@ export default function App() {
               }
             />
           </section>
-        )}
-        {(view !== "data" || !cfg.views.includes("data")) && (
-        <section className={`views ${view}`}>
-          {view !== "3d" && (
-            <div className="view view2d">
-              <OverlayLayer meta={meta} cues={state.plugins.overlays?.active ?? []} />
-              <Pitch2D
-                meta={meta}
-                frame={frame}
-                forecast={state.plugins.ball_forecast}
-                speed={state.plugins.speed_metrics}
-                favoritePlayer={persona.favorite_player}
-              />
-            </div>
-          )}
-          {view !== "2d" && (
-            <div className="view view3d">
-              <Ball3D meta={meta} frame={frame} forecast={state.plugins.ball_forecast} focusId={persona.favorite_player} />
-            </div>
-          )}
-        </section>
-        )}
-        <aside>
-          <AskPanel answers={state.answers} asking={state.asking} onAsk={ask} persona={persona} model={model} />
-          {persona.focus_metric && <MetricFocus meta={meta} metric={persona.focus_metric} plugins={state.plugins} favoritePlayer={persona.favorite_player} />}
-          {persona.favorite_player && (
-            <PlayerFocus meta={meta} playerId={persona.favorite_player} plugins={state.plugins} narrations={state.narrations} />
-          )}
-          <CommentaryFeed meta={meta} narrations={state.narrations} persona={persona} model={model} moments={moments} onExplain={explainMoment} />
-        </aside>
-        <section className={`bottom bottom-${audience}`}>
-          <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
-          {audience !== "fan" && <RecapPanel matchId={meta.match_id} persona={persona} />}
-          {audience !== "fan" && (
-            <AgentOps
-              agents={state.agents}
-              narrations={state.narrations}
-              answers={state.answers}
-              drill={state.drill}
-              onDrill={(agents) => send({ type: "drill", agents })}
-            />
-          )}
-        </section>
-      </main>
+          {transport}
+        </main>
+      )}
     </div>
   );
 }
