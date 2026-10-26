@@ -13,12 +13,12 @@ each viewer, which also makes the match accessible to fans who cannot see the sc
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 
-![Broadcaster view: live pitch, key moments timeline, AI commentary with the agent trace](docs/img/live-broadcaster.jpg)
+![Studio mode: the broadcast output, with the score bug, graphics cues, the commentary as a lower third and the agent strip](docs/img/studio.jpg)
 
 | Explain this moment: telestrated replay, analyst voice | AI highlights: producer + explainers in parallel |
 |---|---|
 | ![Explain this moment](docs/img/explain-3.jpg) | ![Highlights reel clip](docs/img/reel-clip.jpg) |
-| ![Who's watching: Fan, Broadcaster, Analyst](docs/img/kickoff.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
+| ![Broadcaster view: live pitch, key moments timeline, AI commentary with the agent trace](docs/img/live-broadcaster.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
 
 What to try:
 - **Studio mode:** the output as a broadcast or stream would carry it. Full-screen pitch, the score bug, the
