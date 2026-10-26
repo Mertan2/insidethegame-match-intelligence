@@ -24,6 +24,9 @@ What to try:
 - **🎬 Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent
   ranks the moments, one explainer per clip runs in parallel, the producer writes the intro and outro, and the reel
   plays narrated with clip cards and slow motion at the shot.
+- **Metric I care about:** pick one performance metric (sprint distance, completed passes, xG, pressures, top speed
+  or distance). A live ranking of every player on it stays on screen, and the commentary keeps that number in: a
+  goal line also says the scorer's sprint distance so far.
 - **Fan / Broadcaster / Analyst:** who is watching sets the commentary style and the screen (fans get voice, Ask
   and highlights; broadcasters get talking points with the why, graphics cues and the agent panel; analysts also
   get the raw-data tab). Match and plugin controls live under **⚙ Setup**.
@@ -109,7 +112,7 @@ the Azure OpenAI and Speech calls as child dependencies (`app/telemetry.py`). Un
 | Narrative generation: narratives, player context, milestones, recaps | Director briefs → agent chain; player-focus mode; half/full-time recaps; highlights package |
 | Explainability: control vs chaos, pressure changes, rhythm | `momentum` plugin (chaos index, swings), tactics agent, explain-this-moment telestration |
 | Render: on-screen, timed machine-readable overlays | 2D/3D views, replay theatre, `GET /api/matches/{id}/overlays` cue timeline |
-| Personalise: modes, favourite club/player, player-focused mode, language | Fan / Broadcaster / Analyst, casual/tactical, favourites, follow-a-player camera, 7 languages voiced |
+| Personalise: modes, favourite club/player, player-focused mode, a single metric a viewer cares about, language | Fan / Broadcaster / Analyst, casual/tactical, favourites, follow-a-player camera, **Metric I care about** (live ranking + commentary keeps that number), 7 languages voiced |
 | Data innovation | Own generator: 3D ball, foot positions, headers, fatigue, full event stream, any seed/length |
 
 Maps to the hackathon's 5 stages: **ingest** (replay) → **interpret** (plugins, key moments) → **explain**

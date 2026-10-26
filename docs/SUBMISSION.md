@@ -55,7 +55,8 @@ clock.
    exported as a timed, machine-readable cue timeline for a graphics engine, and a DATA tab showing the raw feed,
    live charts and a 22-player tracking table.
 5. **Personalise:** casual vs analyst, favourite club, a player-focus mode (camera, stats and commentary follow one
-   player), 7 languages, spoken by neural voices.
+   player), a metric-focus mode (the one number you care about, live and in the commentary), 7 languages, spoken by
+   neural voices.
 
 **Brief coverage, item by item.**
 - **(ii) Real-time match intelligence.** *Player identification:* live name tags on the pitch, triggered when a
@@ -80,7 +81,9 @@ clock.
 - **Overlays for a rendering partner.** `GET /api/matches/{id}/overlays` returns the timed, machine-readable cue
   timeline (`t_in`, `t_out`, slot, template, data) to synchronise graphics with the live feed.
 - **Personalisation.** Fan / Broadcaster / Analyst modes, casual vs tactical style, favourite club, favourite player
-  with a player-focused mode (camera, stats and commentary follow one player), and language.
+  with a player-focused mode (camera, stats and commentary follow one player), a **metric-focus mode** (pick the
+  one performance metric you care about, such as sprint distance or completed passes: a live ranking stays on
+  screen and the commentary keeps that number in), and language.
 
 **Multi-agent orchestration (Microsoft Agent Framework).**
 - **Distinct roles.** A deterministic *broadcast director* watches every event and frame and writes briefs
@@ -119,7 +122,7 @@ clock.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (54 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (55 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own

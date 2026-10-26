@@ -81,7 +81,8 @@ export default function App() {
   useEffect(() => {
     // Above 2x the play outruns any voice: only key moments are spoken then.
     const key = ["goal", "big_chance", "half_time_recap", "full_time_recap"].includes(latestNarration?.kind ?? "");
-    if (latestNarration && (state.speed <= 2 || key)) speak(latestNarration.text, latestNarration.language, latestNarration.kind);
+    // A line still being written when the match was paused arrives late: stay quiet.
+    if (latestNarration && !state.paused && (state.speed <= 2 || key)) speak(latestNarration.text, latestNarration.language, latestNarration.kind);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestNarration]);
   useEffect(() => {
