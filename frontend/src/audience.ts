@@ -10,7 +10,7 @@ export const AUDIENCES: Record<
 > = {
   fan: {
     label: "Fan",
-    icon: "🏟️",
+    icon: "stadium",
     blurb: "Spoken commentary, ask anything, follow your player, instant highlights",
     mode: "casual",
     view: "both",
@@ -18,7 +18,7 @@ export const AUDIENCES: Record<
   },
   broadcaster: {
     label: "Broadcaster",
-    icon: "🎙️",
+    icon: "mic",
     blurb: "On-air graphics cues, talking points with the why, a highlights package in one click",
     mode: "analyst",
     view: "2d",
@@ -26,7 +26,7 @@ export const AUDIENCES: Record<
   },
   analyst: {
     label: "Analyst",
-    icon: "📊",
+    icon: "chart",
     blurb: "Raw feed, live metrics, every agent step and the tracking data",
     mode: "analyst",
     view: "2d",

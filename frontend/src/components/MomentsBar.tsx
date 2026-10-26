@@ -1,4 +1,5 @@
 import type { MatchMeta, Moment } from "../types";
+import { Icon } from "./Icon";
 
 interface Props {
   meta: MatchMeta;
@@ -10,7 +11,7 @@ interface Props {
   onHighlights: () => void;
 }
 
-const ICON: Record<Moment["kind"], string> = { goal: "⚽", save: "🧤", miss: "↗" };
+const ICON: Record<Moment["kind"], string> = { goal: "goal", save: "save", miss: "shot" };
 
 /**
  * The match so far as a timeline of key moments (no spoilers: only what has happened).
@@ -40,13 +41,13 @@ export function MomentsBar({ meta, moments, now, ended, busy, onExplain, onHighl
             onClick={() => onExplain(m)}
             disabled={busy !== null}
           >
-            {ICON[m.kind]}
+            <Icon name={ICON[m.kind]} size={14} />
           </button>
         ))}
         {seen.length === 0 && <span className="moments-empty muted">Shots and goals appear here as they happen</span>}
       </div>
       <button className="highlights-btn" onClick={onHighlights} disabled={busy !== null || seen.length === 0}>
-        🎬 {ended ? "Match highlights" : "Highlights so far"}
+        <Icon name="film" /> {ended ? "Match highlights" : "Highlights so far"}
       </button>
     </div>
   );

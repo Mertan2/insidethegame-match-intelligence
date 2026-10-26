@@ -1,4 +1,5 @@
 import { FOCUS_METRICS, type FocusMetric, type MatchMeta, type Persona, type Side } from "../types";
+import { Icon } from "./Icon";
 
 const LANGUAGES = [
   ["en", "English"],
@@ -25,7 +26,7 @@ export function Controls({ meta, persona, onPersona, paused, speed, t, onControl
   return (
     <div className="controls">
       <div className="control-group">
-        <button onClick={() => onControl({ action: paused ? "play" : "pause" })}>{paused ? "▶ Play" : "⏸ Pause"}</button>
+        <button onClick={() => onControl({ action: paused ? "play" : "pause" })}>{paused ? <><Icon name="play" /> Play</> : <><Icon name="pause" /> Pause</>}</button>
         <select value={speed} onChange={(e) => onControl({ speed: Number(e.target.value) })}>
           {[1, 2, 4, 8, 16, 32].map((s) => (
             <option key={s} value={s}>

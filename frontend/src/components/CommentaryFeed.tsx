@@ -1,11 +1,12 @@
 import type { MatchMeta, Moment, Narration, Persona } from "../types";
+import { Icon } from "./Icon";
 
 const KIND_LABEL: Record<string, string> = {
-  play_by_play: "▶ play-by-play",
-  fun_fact: "★ fun fact",
-  recap: "≡ recap",
-  half_time_recap: "≡ half-time recap",
-  full_time_recap: "≡ full-time recap",
+  play_by_play: "play-by-play",
+  fun_fact: "fun fact",
+  recap: "recap",
+  half_time_recap: "half-time recap",
+  full_time_recap: "full-time recap",
 };
 
 interface Props {
@@ -48,7 +49,7 @@ export function CommentaryFeed({ meta, narrations, persona, model, moments = [],
           <p>{n.text}</p>
           {onExplain && momentFor(n, moments) && (
             <button className="explain-btn" onClick={() => onExplain(momentFor(n, moments)!)}>
-              ▶ Replay & explain
+              <Icon name="play" size={12} /> Replay & explain
             </button>
           )}
           {analyst && n.facts.length > 0 && (

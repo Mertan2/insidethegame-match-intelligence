@@ -16,6 +16,7 @@ import { RecapPanel } from "./components/RecapPanel";
 import { ReplayTheater } from "./components/ReplayTheater";
 import { StatsPanel } from "./components/StatsPanel";
 import { Studio } from "./components/Studio";
+import { BrandMark, Icon } from "./components/Icon";
 import { AUDIENCES, loadAudience, saveAudience, type Audience, type View } from "./audience";
 import type { Moment, Persona, Program, ReplayItem, TraceStep } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
@@ -177,7 +178,7 @@ export default function App() {
       )}
       <header>
         <div className="brand">
-          <span className="brand-mark">◆</span> Inside the Game
+          <BrandMark /> Inside the Game
         </div>
         <div className="scoreboard">
           <span className="team" style={{ color: meta.teams.home.color }}>{meta.teams.home.name}</span>
@@ -192,7 +193,7 @@ export default function App() {
         <div className="segmented audience-switch" role="tablist" aria-label="Who's watching">
           {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
             <button key={a} className={audience === a ? "active" : ""} onClick={() => setAudience(a)} title={AUDIENCES[a].blurb}>
-              {AUDIENCES[a].icon} {AUDIENCES[a].label}
+              <Icon name={AUDIENCES[a].icon} /> {AUDIENCES[a].label}
             </button>
           ))}
         </div>
@@ -206,14 +207,14 @@ export default function App() {
               onClick={() => setVoiceOn((v) => !v)}
               title="Spoken AI commentary (Azure AI Speech neural voice, in your language)"
             >
-              {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔇 Voice off"}
+              <Icon name={voiceOn ? "voice" : "voiceOff"} /> {voiceOn ? (speaking ? "Speaking…" : "Voice on") : "Voice off"}
             </button>
           )}
           <button className="studio-btn" onClick={() => setStudio(true)} title="Full-screen broadcast output: pitch, graphics cues and the commentary as captions">
-            📺 Studio
+            <Icon name="studio" /> Studio
           </button>
           <button className={`setup-btn ${setupOpen ? "on" : ""}`} onClick={() => setSetupOpen((o) => !o)} aria-expanded={setupOpen}>
-            ⚙ Setup
+            <Icon name="settings" /> Setup
           </button>
         </div>
       </header>
@@ -295,10 +296,10 @@ export default function App() {
             <b>Full time.</b> The producer can cut the match highlights now.
           </span>
           <button className="highlights-btn" onClick={highlightsSoFar}>
-            🎬 Watch match highlights
+            <Icon name="film" /> Watch match highlights
           </button>
           <button className="ft-close" onClick={() => setFtDismissed(true)} aria-label="Dismiss">
-            ✕
+            <Icon name="close" />
           </button>
         </div>
       )}

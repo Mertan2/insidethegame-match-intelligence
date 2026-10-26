@@ -1,4 +1,5 @@
 import { AUDIENCES, type Audience } from "../audience";
+import { Icon } from "./Icon";
 import type { MatchMeta, Persona } from "../types";
 
 const LANGUAGES: [string, string][] = [
@@ -52,14 +53,14 @@ export function Kickoff({ meta, persona, voiceAvailable, onLanguage, audience, o
         <div className="audience-cards">
           {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
             <button key={a} className={`audience-card ${audience === a ? "active" : ""}`} onClick={() => onAudience(a)}>
-              <span className="audience-icon">{AUDIENCES[a].icon}</span>
+              <span className="audience-icon"><Icon name={AUDIENCES[a].icon} size={26} /></span>
               <b>{AUDIENCES[a].label}</b>
               <span>{AUDIENCES[a].blurb}</span>
             </button>
           ))}
         </div>
         <button className="kickoff-go" onClick={onKickoff}>
-          ▶ Kick off{voiceAvailable ? " with live commentary 🔊" : ""}
+          <Icon name="play" size={18} /> Kick off{voiceAvailable ? " with live commentary" : ""}
         </button>
       </div>
     </div>

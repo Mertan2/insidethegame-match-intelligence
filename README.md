@@ -21,7 +21,7 @@ each viewer, which also makes the match accessible to fans who cannot see the sc
 | ![Who's watching: Fan, Broadcaster, Analyst](docs/img/kickoff.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
 
 What to try:
-- **📺 Studio mode:** the output as a broadcast or stream would carry it. Full-screen pitch, the score bug, the
+- **Studio mode:** the output as a broadcast or stream would carry it. Full-screen pitch, the score bug, the
   graphics cues from the overlays plugin (goal, big chance, "ON TARGET", pass rating, game state), the commentary
   as a lower-third caption with a **Replay & explain** button on goals and chances, and a strip showing which
   agent wrote the line and by which path. No dashboard chrome; Esc returns to it.
@@ -32,7 +32,7 @@ What to try:
   replays it like a TV analyst at the telestrator: the move is drawn from tracking (how the ball was won, the passes,
   the key pass and how many defenders it took out, the space at the shot), the replay freezes on each beat and the
   analyst says it out loud, in the viewer's language.
-- **🎬 Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent
+- **Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent
   ranks the moments, one explainer per clip runs in parallel, the producer writes the intro and outro, and the reel
   plays narrated with clip cards and slow motion at the shot.
 - **Metric I care about:** pick one performance metric (sprint distance, completed passes, xG, pressures, top speed
@@ -40,7 +40,7 @@ What to try:
   goal line also says the scorer's sprint distance so far.
 - **Fan / Broadcaster / Analyst:** who is watching sets the commentary style and the screen (fans get voice, Ask
   and highlights; broadcasters get talking points with the why, graphics cues and the agent panel; analysts also
-  get the raw-data tab). Match and plugin controls live under **⚙ Setup**.
+  get the raw-data tab). Match and plugin controls live under **Setup**.
 - **DATA tab:** the raw feed made visible. Live throughput (messages/s, KB/s), xG race, possession, momentum and
   ball-speed charts building second by second, a 22-player tracking table (position, live speed, foot heights)
   and the event stream as it arrives.
@@ -48,7 +48,7 @@ What to try:
   An agent with function calling picks live-data tools (`get_match_state`, `get_player`, `get_team_stats`,
   `get_recent_events`, `get_top_players`, `get_ball_forecast`) and answers only from what they return. The tools
   it used are shown under each answer.
-- **🔈 Voice commentary:** turn it on in the header and the AI commentary and answers are spoken live by an
+- **Voice commentary:** turn it on in the header and the AI commentary and answers are spoken live by an
   Azure AI Speech neural voice in the viewer's language (en, tr, es, fr, de, pt, ar), with more energy on goals.
 - **Broadcast director:** watches every event and frame and briefs the narrator every few seconds: play-by-play
   of what's on screen (who has the ball, where, the current passing move), fun facts as they happen (longest

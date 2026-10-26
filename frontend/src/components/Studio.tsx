@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { MatchMeta, Frame, Moment, Narration, Persona, PluginPayloads } from "../types";
 import { OverlayLayer } from "./OverlayLayer";
 import { Pitch2D } from "./Pitch2D";
+import { BrandMark, Icon } from "./Icon";
 
 const CHAIN = ["stats", "tactics", "narrator", "persona"];
 
@@ -73,10 +74,10 @@ export function Studio(props: Props) {
   return (
     <div className="studio" role="region" aria-label="Studio output">
       <div className="studio-bar">
-        <span className="studio-brand">◆ INSIDE THE GAME · STUDIO</span>
+        <span className="studio-brand"><BrandMark size={12} /> INSIDE THE GAME · STUDIO</span>
         <span className="studio-bar-gap" />
         <button onClick={() => props.onControl({ action: paused ? "play" : "pause" })} disabled={ended}>
-          {paused ? "▶ Play" : "⏸ Pause"}
+          {paused ? <><Icon name="play" /> Play</> : <><Icon name="pause" /> Pause</>}
         </button>
         <select value={speed} onChange={(e) => props.onControl({ speed: Number(e.target.value) })} aria-label="Speed">
           {[1, 2, 4, 8, 16, 32].map((s) => (
@@ -87,14 +88,14 @@ export function Studio(props: Props) {
         </select>
         {voiceAvailable && (
           <button className={`voice-toggle ${voiceOn ? "on" : ""}`} onClick={props.onVoice}>
-            {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔇 Voice off"}
+            <Icon name={voiceOn ? "voice" : "voiceOff"} /> {voiceOn ? (speaking ? "Speaking…" : "Voice on") : "Voice off"}
           </button>
         )}
         <button className="highlights-btn" onClick={props.onHighlights} disabled={busy !== null || moments.filter((m) => m.t <= (frame?.t ?? 0)).length === 0}>
-          🎬 {ended ? "Match highlights" : "Highlights so far"}
+          <Icon name="film" /> {ended ? "Match highlights" : "Highlights so far"}
         </button>
         <button className="studio-exit" onClick={props.onExit} title="Back to the dashboard (Esc)">
-          ✕ Exit studio
+          <Icon name="close" /> Exit studio
         </button>
       </div>
 
@@ -138,7 +139,7 @@ export function Studio(props: Props) {
                 {team && <span className="studio-team">{team.name}</span>}
                 {moment && (
                   <button className="explain-btn studio-explain" onClick={() => props.onExplain(moment)} disabled={busy !== null}>
-                    ▶ Replay & explain {moment.minute}' {moment.kind}
+                    <Icon name="play" size={12} /> Replay & explain {moment.minute}' {moment.kind}
                   </button>
                 )}
               </div>
@@ -157,7 +158,7 @@ export function Studio(props: Props) {
               <span key={name} className="studio-agent-wrap">
                 {i > 0 && <span className="ops-arrow">→</span>}
                 <span className={`studio-agent path-${s?.path ?? "none"} ${s && s.status !== "ok" ? "fallback" : ""} ${down ? "down" : ""}`}>
-                  {down ? "⚡ " : ""}
+                  {down && <Icon name="bolt" size={11} />}
                   {name}
                   {s && s.path !== "skipped" && <small>{s.path === "llm" ? "LLM" : s.path === "deterministic" ? "rules" : s.path}</small>}
                 </span>

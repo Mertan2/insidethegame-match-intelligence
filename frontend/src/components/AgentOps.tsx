@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { AgentInfo, Answer, Narration } from "../types";
+import { Icon } from "./Icon";
 
 const CHAIN = ["stats", "tactics", "narrator", "persona"];
 
@@ -94,7 +95,7 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
                     style={{ animationDelay: `${i * 0.18}s` }}
                     title={`${roles[name] ?? ""}${s ? ` · ${s.status}` : ""}`}
                   >
-                    <b>{drill.includes(name) ? "⚡ " : ""}{name}</b>
+                    <b>{drill.includes(name) && <Icon name="bolt" size={12} />}{name}</b>
                     <span>{s ? pathLabel(s.path) : "–"}</span>
                     <span className="ops-ms">{s && s.path !== "skipped" ? `${Math.round(s.ms)} ms` : ""}</span>
                   </div>
@@ -158,7 +159,7 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
           <div className="ops-drill-buttons">
             {CHAIN.map((name) => (
               <button key={name} className={drill.includes(name) ? "down" : ""} onClick={() => toggleDrill(name)} title={`Fail the ${name} agent on purpose`}>
-                {drill.includes(name) ? `⚡ ${name} down` : `kill ${name}`}
+                {drill.includes(name) ? <><Icon name="bolt" size={12} /> {name} down</> : `kill ${name}`}
               </button>
             ))}
             {drill.length > 0 && <button onClick={() => onDrill([])}>restore all</button>}

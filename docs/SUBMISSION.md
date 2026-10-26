@@ -155,15 +155,15 @@ metrics possible.
 
 1. Open the live demo, pick a language and **Fan**, **Broadcaster** or **Analyst**, press **Kick off** (sound on;
    browsers only allow audio after that click).
-2. When a ⚽ or 🧤 appears on the **Key moments** timeline, click it: the explainer agent replays the move with
+2. When a goal or save marker appears on the **Key moments** timeline, click it: the explainer agent replays the move with
    telestration and talks you through it.
-3. Press **🎬 Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
+3. Press **Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
    explainer agents.
 4. Watch the **Agent team · live** panel (Broadcaster or Analyst) for each line's run through the agents, then
    press **kill tactics** in its outage drill: the next lines still arrive, with the fallback in the trace.
-5. Press **📺 Studio** in the header for the broadcast output (Esc to come back).
+5. Press **Studio** in the header for the broadcast output (Esc to come back).
 6. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
-7. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **⚙ Setup** has match and plugin
+7. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **Setup** has match and plugin
    controls.
 
 No login is needed.

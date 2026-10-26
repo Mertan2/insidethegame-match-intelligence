@@ -5,7 +5,8 @@
   --text: #e6edf6;
   --muted: #8a9ab0;
   --accent: #ffe65a;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01", "tnum";
   color: var(--text);
   background: var(--bg);
 }
@@ -454,7 +455,7 @@ header { background: linear-gradient(180deg, #0f1724, #0a0f17); }
 .ops-drill-note { margin: 6px 0 0; color: #ffb4a2; }
 
 /* Studio mode: broadcast typography (Barlow, falls back to the system face) */
-.studio { --bc-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; --bc-text: "Barlow", system-ui, sans-serif; font-family: var(--bc-text); }
+.studio { --bc-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; --bc-text: "Inter", system-ui, sans-serif; font-family: var(--bc-text); }
 .studio-brand { font-family: var(--bc-display); font-size: 15px; letter-spacing: 0.2em; }
 .studio-bug { font-family: var(--bc-display); font-size: clamp(18px, 1.9vw, 26px); border-radius: 6px; text-transform: uppercase; }
 .studio-bug-team { padding: 4px 14px; }
@@ -469,3 +470,27 @@ header { background: linear-gradient(180deg, #0f1724, #0a0f17); }
 .studio-pitch .cue-sub { font-weight: 600; }
 .studio-agents-label, .studio-agent { font-family: var(--bc-text); }
 .studio-follow { font-family: var(--bc-display); text-transform: uppercase; letter-spacing: 0.08em; font-size: 15px; }
+
+/* Icons and marks */
+.ico { display: inline-block; vertical-align: -0.18em; flex: none; }
+button .ico { margin-right: 2px; }
+.brand-ico { color: #b69cff; vertical-align: -0.1em; margin-right: 6px; }
+.moment-pin .ico { vertical-align: middle; }
+.moment-pin.goal { color: #3dff8f; }
+.moment-pin.save { color: #7cc7ff; }
+.moment-pin.miss { color: #ff9f43; }
+.owner-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #0a0f17, 0 0 0 3px #ffe65a; }
+.audience-icon { color: #b69cff; display: flex; }
+.audience-switch .ico { color: #b69cff; }
+.theater-progress .dot .ico { vertical-align: -0.1em; }
+
+/* Type scale: tighter, more editorial */
+h1, h2, h3, .kickoff-card h1 { letter-spacing: -0.01em; }
+.panel h3 { font-weight: 700; letter-spacing: 0.08em; font-size: 12px; }
+.brand { font-weight: 800; letter-spacing: 0.12em; font-size: 13px; }
+.scoreboard .score { font-weight: 800; letter-spacing: -0.02em; }
+.kickoff-card h1 { font-weight: 800; font-size: 32px; }
+.kickoff-go { font-weight: 700; letter-spacing: -0.005em; }
+.theater-card-label { letter-spacing: -0.01em; }
+.audience-card b { font-weight: 700; }
+button, select, input { font-weight: 500; }

@@ -141,7 +141,7 @@ function TrackingTable({ meta, frame, plugins, playerKmh }: { meta: MatchMeta; f
                 <td className={f && f[3] > 0.05 ? "lifted" : ""}>{f ? `z ${f[3].toFixed(2)}` : "-"}</td>
                 <td className={f && f[6] > 0.05 ? "lifted" : ""}>{f ? `z ${f[6].toFixed(2)}` : "-"}</td>
                 <td>{s ? `${s.distance_m} m` : "-"}</td>
-                <td>{frame?.owner === id ? "⚽" : ""}</td>
+                <td>{frame?.owner === id ? <span className="owner-dot" title="On the ball" /> : ""}</td>
               </tr>
             );
           })}

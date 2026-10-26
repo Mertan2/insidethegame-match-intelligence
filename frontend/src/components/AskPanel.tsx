@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Answer, Persona } from "../types";
+import { Icon } from "./Icon";
 
 const SUGGESTIONS: Record<string, string[]> = {
   en: ["Who has been the best player so far?", "Why is one team dominating?", "Who is tiring?", "How good was that last shot?"],
@@ -40,7 +41,7 @@ export function AskPanel({ answers, asking, onAsk, persona, model }: {
           <div className="trace">
             {a.tools.map((t, j) => (
               <span key={j} className="chip tool-chip" title={JSON.stringify(t.args)}>
-                ⚙ {t.tool}({Object.values(t.args).join(", ")})
+                <Icon name="tool" size={12} /> {t.tool}({Object.values(t.args).join(", ")})
               </span>
             ))}
             <span className="chip">{a.path === "llm" ? "AI" : a.path} · {(a.ms / 1000).toFixed(1)}s</span>

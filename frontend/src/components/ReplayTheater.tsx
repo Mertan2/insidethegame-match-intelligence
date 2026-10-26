@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Beat, Frame, MatchMeta, MomentStep, Program, ReplayFrame, ReplayItem } from "../types";
 import { Pitch2D } from "./Pitch2D";
+import { Icon } from "./Icon";
 
 const L = 105;
 const GOAL_HALF = 3.66;
@@ -238,7 +239,7 @@ export function ReplayTheater({ meta, program, voice, language, onClose }: Props
     <div className="theater" role="dialog" aria-label={title}>
       <div className="theater-top">
         <div className="theater-title">
-          <span className="theater-kicker">🎬 {title}</span>
+          <span className="theater-kicker"><Icon name="film" size={13} /> {title}</span>
           <b>
             {meta.teams.home.name} {item?.moment.score_after.home ?? ""}–{item?.moment.score_after.away ?? ""} {meta.teams.away.name}
           </b>
@@ -258,9 +259,9 @@ export function ReplayTheater({ meta, program, voice, language, onClose }: Props
           </span>
         </div>
         <div className="theater-actions">
-          <button onClick={togglePause}>{paused ? "▶ Play" : "⏸ Pause"}</button>
-          {program.items.length > 1 && <button onClick={skip}>⏭ Next</button>}
-          <button onClick={onClose} aria-label="Close replay">✕</button>
+          <button onClick={togglePause}>{paused ? <><Icon name="play" /> Play</> : <><Icon name="pause" /> Pause</>}</button>
+          {program.items.length > 1 && <button onClick={skip}><Icon name="next" /> Next</button>}
+          <button onClick={onClose} aria-label="Close replay"><Icon name="close" /></button>
         </div>
       </div>
 
@@ -303,7 +304,7 @@ export function ReplayTheater({ meta, program, voice, language, onClose }: Props
       <div className="theater-progress">
         {program.items.map((it, i) => (
           <span key={it.moment.id} className={`dot ${it.moment.kind} ${i === itemIndex ? "on" : i < itemIndex ? "past" : ""}`}>
-            {it.moment.minute}' {it.moment.kind === "goal" ? "⚽" : it.moment.kind === "save" ? "🧤" : "↗"}
+            {it.moment.minute}' <Icon name={it.moment.kind === "goal" ? "goal" : it.moment.kind === "save" ? "save" : "shot"} size={12} />
           </span>
         ))}
       </div>
