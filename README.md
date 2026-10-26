@@ -2,9 +2,13 @@
 
 ![Inside the Game: explainable match intelligence, live](docs/cover.png)
 
+**Every fan gets their own commentator: their club, their player, their language, spoken live.** One data feed,
+millions of personal broadcasts, explained by a team of AI agents on Microsoft Agent Framework.
+
 Hackathon project for **Microsoft + Premier League "Inside the Game"**. It turns synthetic football data into
-live, explainable match intelligence: stats derived from raw data, a bird's-eye view, a 3D ball-flight
-forecast, and a multi-agent narrator that writes for each viewer.
+live, explainable match intelligence: stats derived from raw tracking, a Studio-mode broadcast output, telestrated
+replays that explain every goal, a 3D ball-flight forecast, and a multi-agent narrator that writes and speaks for
+each viewer, which also makes the match accessible to fans who cannot see the screen.
 
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)

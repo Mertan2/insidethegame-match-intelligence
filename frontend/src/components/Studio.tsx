@@ -151,7 +151,7 @@ export function Studio(props: Props) {
         <div className="studio-agents" title="How the last line was made: one chip per agent, lit for the path it took">
           <span className="studio-agents-label">AGENT TEAM</span>
           {CHAIN.map((name, i) => {
-            const s = steps.find((x) => x.agent === name);
+            const s = [...steps].reverse().find((x) => x.agent === name); // the run step, appended last
             const down = drill.includes(name);
             return (
               <span key={name} className="studio-agent-wrap">

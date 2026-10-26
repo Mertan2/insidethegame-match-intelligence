@@ -12,12 +12,14 @@ Best Multi-Agent Orchestration (also eligible for the Grand Prize)
 
 ## Tagline (one line)
 
-A team of AI agents that watches every event of a football match, explains it live and cuts a narrated, telestrated highlights package in one click, for fans, broadcasters and analysts.
+Every fan gets their own commentator: their club, their player, their language, spoken live. One data feed, millions of personal broadcasts, explained by a team of AI agents.
 
 ## Elevator pitch
 
-Live match data says *what* happened; fans, studios and broadcasters want *why* it matters, instantly, for very
-different audiences. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
+A football broadcast is made once, for everyone, in one language. Live match data says *what* happened; fans,
+studios and broadcasters want *why* it matters, instantly, each in their own way. Inside the Game makes one data
+feed into a personal broadcast for every viewer: their club, their player, the one number they care about, their
+language, spoken out loud, which also makes the match accessible to fans who cannot see the screen. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
 intelligence: deeper stats, a 3D ball-flight forecast that calls shots on target before they arrive, and a team of
 specialised AI agents on Microsoft Agent Framework that commentates the whole match live, out loud, in the viewer's
 language. Click any goal or chance and an explainer agent replays it like a TV analyst at the telestrator: the
@@ -29,8 +31,10 @@ models), Azure AI Speech and Azure Container Apps.
 ## Description
 
 **The problem.** A live feed is a stream of numbers. Turning it into a story ("that's their longest passing move of
-the match", "it comes against the run of play", "the forecast called it on target 0.3 s before it arrived") normally
-takes a studio team, and it is produced once for everyone.
+the match", "it comes against the run of play", "the forecast called it on target 0.3 s before it arrived") takes a
+studio team, and it is produced once, for everyone, in one language. A Premier League match is watched by hundreds
+of millions of people who support different clubs, follow different players, speak different languages and watch
+with different levels of sight and expertise. One broadcast cannot serve them all; a team of agents can.
 
 **What it does.** Open the app, choose a language and who is watching (**Fan**, **Broadcaster** or **Analyst**:
 each gets its own commentary style and screen), press **Kick off**. The match plays
@@ -130,8 +134,16 @@ clock.
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
-language and style, from a single data feed, and the overlay timeline and WebSocket protocol are built to plug into
-a production graphics path.
+language and style, from a single data feed: commentary that scales to every viewer instead of one broadcast for
+all. Spoken output makes the match accessible to blind and low-vision fans and to fans who do not speak the
+broadcast language. The overlay timeline, Studio mode and WebSocket protocol are built to plug into a production
+graphics path, and the A2A endpoint lets a broadcaster's own agents use the analyst as a service.
+
+**Data innovation.** Most entries read the organiser's event file. We wrote a football-realistic generator: 22
+players and the ball in 3D at 10 Hz, left and right foot positions from a gait model, preferred and weak feet,
+headers and crosses, fatigue that slows sprints, and the full event stream, for any seed and length. The tracking
+is what makes the explainer's telestration, the ball-flight forecast and the auto-computed speed and distance
+metrics possible.
 
 ## Links
 

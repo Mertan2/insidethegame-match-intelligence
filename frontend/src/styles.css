@@ -452,3 +452,20 @@ header { background: linear-gradient(180deg, #0f1724, #0a0f17); }
 .ops-drill-buttons button.down { border-color: #ff5d5d; background: rgba(255, 93, 93, 0.16); color: #ffb4a2; font-weight: 700; }
 .ops-step.down { border-color: #ff5d5d; }
 .ops-drill-note { margin: 6px 0 0; color: #ffb4a2; }
+
+/* Studio mode: broadcast typography (Barlow, falls back to the system face) */
+.studio { --bc-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; --bc-text: "Barlow", system-ui, sans-serif; font-family: var(--bc-text); }
+.studio-brand { font-family: var(--bc-display); font-size: 15px; letter-spacing: 0.2em; }
+.studio-bug { font-family: var(--bc-display); font-size: clamp(18px, 1.9vw, 26px); border-radius: 6px; text-transform: uppercase; }
+.studio-bug-team { padding: 4px 14px; }
+.studio-bug-score { padding: 4px 16px; background: #ffffff; color: #05080d; }
+.studio-bug-clock { color: #ffe65a; }
+.studio-caption p { font-family: var(--bc-text); font-weight: 600; letter-spacing: -0.005em; }
+.studio-kicker { font-family: var(--bc-display); font-size: 16px; letter-spacing: 0.18em; }
+.studio-clock, .studio-team { font-family: var(--bc-display); font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
+.studio-pitch .cue { font-family: var(--bc-text); border-left-width: 6px; background: rgba(5, 8, 13, 0.92); }
+.studio-pitch .cue-kicker { font-family: var(--bc-display); letter-spacing: 0.16em; font-size: clamp(12px, 1.05vw, 15px); color: #ffe65a; }
+.studio-pitch .cue-title { font-family: var(--bc-display); text-transform: uppercase; letter-spacing: 0.02em; font-size: clamp(22px, 2.6vw, 36px); line-height: 1.05; }
+.studio-pitch .cue-sub { font-weight: 600; }
+.studio-agents-label, .studio-agent { font-family: var(--bc-text); }
+.studio-follow { font-family: var(--bc-display); text-transform: uppercase; letter-spacing: 0.08em; font-size: 15px; }

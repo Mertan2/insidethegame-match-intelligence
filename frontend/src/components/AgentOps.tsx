@@ -85,7 +85,7 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
           </div>
           <div className="ops-chain">
             {CHAIN.map((name, i) => {
-              const s = last.find((x) => x.agent === name);
+              const s = [...last].reverse().find((x) => x.agent === name); // the run step, appended last
               return (
                 <div key={name} className="ops-step-wrap">
                   {i > 0 && <span className="ops-arrow">→</span>}
