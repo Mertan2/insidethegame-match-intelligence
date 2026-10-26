@@ -58,7 +58,7 @@ clock.
 4. **Render:** a **Studio mode** that shows the output as a broadcast or stream would carry it (full-screen
    pitch, score bug, graphics cues, the commentary as a lower-third caption, the agent strip), 2D tactical and 3D
    views, broadcast graphics (lower thirds, "ON TARGET" calls, fun-fact cards) also exported as a timed,
-   machine-readable cue timeline for a graphics engine, and a DATA tab showing the raw feed, live charts and a
+   machine-readable cue timeline for a graphics engine, and a Data screen showing the raw feed, live charts and a
    22-player tracking table.
 5. **Personalise:** casual vs analyst, favourite club, a player-focus mode (camera, stats and commentary follow one
    player), a metric-focus mode (the one number you care about, live and in the commentary), 7 languages, spoken by
@@ -153,18 +153,18 @@ metrics possible.
 
 ## How to try it (testing instructions)
 
-1. Open the live demo, pick a language and **Fan**, **Broadcaster** or **Analyst**, press **Kick off** (sound on;
+1. Open the live demo, pick **Fan**, **Broadcaster** or **Analyst** and a language, press **Kick off** (sound on;
    browsers only allow audio after that click).
-2. When a goal or save marker appears on the **Key moments** timeline, click it: the explainer agent replays the move with
-   telestration and talks you through it.
+2. **Watch** is the broadcast: when a goal or chance lands, press **Replay & explain** in the caption (or the marker
+   on the key moments timeline): the explainer agent replays the move with telestration and talks you through it.
 3. Press **Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
    explainer agents.
-4. Watch the **Agent team · live** panel (Broadcaster or Analyst) for each line's run through the agents, then
-   press **kill tactics** in its outage drill: the next lines still arrive, with the fallback in the trace.
-5. Press **Studio** in the header for the broadcast output (Esc to come back).
+4. In the rail, set your club, follow a player, pick the metric you care about, switch language: the commentary
+   and the screen change for you. **Studio** shows the broadcast full screen.
+5. **Crew** shows each line's run through the agents. Press **kill tactics** in the outage drill: the next lines
+   still arrive, with the fallback in the trace. The A2A agent card and endpoint are listed there.
 6. Ask a question in **Ask the AI**; the tools it called are listed under the answer.
-7. In Analyst, the **DATA** tab shows the raw feed, live charts and tracking table. **Setup** has match and plugin
-   controls.
+7. **Data** shows the raw feed, live charts and the tracking table. **Setup** has match and plugin controls.
 
 No login is needed.
 

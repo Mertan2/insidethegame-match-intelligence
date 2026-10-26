@@ -18,47 +18,39 @@ each viewer, which also makes the match accessible to fans who cannot see the sc
 | Explain this moment: telestrated replay, analyst voice | AI highlights: producer + explainers in parallel |
 |---|---|
 | ![Explain this moment](docs/img/explain-3.jpg) | ![Highlights reel clip](docs/img/reel-clip.jpg) |
-| ![Broadcaster view: live pitch, key moments timeline, AI commentary with the agent trace](docs/img/live-broadcaster.jpg) | ![Highlights clip card](docs/img/reel-card.jpg) |
+| ![Watch: the broadcast with the viewer's rail](docs/img/live-broadcaster.jpg) | ![Crew: the agent team, outage drill, A2A](docs/img/crew.jpg) |
 
 What to try:
-- **Studio mode:** the output as a broadcast or stream would carry it. Full-screen pitch, the score bug, the
-  graphics cues from the overlays plugin (goal, big chance, "ON TARGET", pass rating, game state), the commentary
-  as a lower-third caption with a **Replay & explain** button on goals and chances, and a strip showing which
-  agent wrote the line and by which path. No dashboard chrome; Esc returns to it.
-- **Outage drill:** in the **Agent team · live** panel (Broadcaster or Analyst), kill any agent in the chain
-  while the match is on. Every call to it fails; the chain routes around it on the deterministic template, the
-  trace records the fallback, and the line still goes out. Failure recovery, shown live rather than claimed.
-- **Explain this moment:** every shot and goal lands on the key moments timeline. Click one and the explainer agent
-  replays it like a TV analyst at the telestrator: the move is drawn from tracking (how the ball was won, the passes,
-  the key pass and how many defenders it took out, the space at the shot), the replay freezes on each beat and the
-  analyst says it out loud, in the viewer's language.
-- **Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent
-  ranks the moments, one explainer per clip runs in parallel, the producer writes the intro and outro, and the reel
-  plays narrated with clip cards and slow motion at the shot.
-- **Metric I care about:** pick one performance metric (sprint distance, completed passes, xG, pressures, top speed
-  or distance). A live ranking of every player on it stays on screen, and the commentary keeps that number in: a
-  goal line also says the scorer's sprint distance so far.
-- **Fan / Broadcaster / Analyst:** who is watching sets the commentary style and the screen (fans get voice, Ask
-  and highlights; broadcasters get talking points with the why, graphics cues and the agent panel; analysts also
-  get the raw-data tab). Match and plugin controls live under **Setup**.
-- **DATA tab:** the raw feed made visible. Live throughput (messages/s, KB/s), xG race, possession, momentum and
-  ball-speed charts building second by second, a 22-player tracking table (position, live speed, foot heights)
-  and the event stream as it arrives.
-- **Ask the AI:** ask anything about the match in any language ("who is tiring?", "why are they dominating?").
-  An agent with function calling picks live-data tools (`get_match_state`, `get_player`, `get_team_stats`,
-  `get_recent_events`, `get_top_players`, `get_ball_forecast`) and answers only from what they return. The tools
-  it used are shown under each answer.
-- **Voice commentary:** turn it on in the header and the AI commentary and answers are spoken live by an
-  Azure AI Speech neural voice in the viewer's language (en, tr, es, fr, de, pt, ar), with more energy on goals.
-- **Broadcast director:** watches every event and frame and briefs the narrator every few seconds: play-by-play
-  of what's on screen (who has the ball, where, the current passing move), fun facts as they happen (longest
-  move, fastest shot, braces, headers, weak-foot goals, saves, distance milestones) and running, half-time and
-  full-time recaps. Key moments always go first. In Analyst mode, each line shows the brief the narrator got.
-- **Live AI commentary:** every line is written by the agent team (labelled with the model), including
-  "state of play" updates every two match minutes.
-- **Agent team · live:** the orchestration on screen. Each line lights up its run through stats → tactics →
-  narrator → persona with the path each agent took (rules, LLM, skipped, fallback) and its latency, running
-  totals per agent, and the tools the Ask agent called for the last question.
+- **Watch:** the broadcast, personalised for you. The pitch with live graphics cues, the score bug, the commentary
+  as a lower-third caption with a **Replay & explain** button on every goal and chance, and a strip showing which
+  agent wrote the line and by which path. The rail is *you*: Fan, Broadcaster or Analyst; language; your club; your
+  player (the camera, stats and commentary follow them); the one metric you care about (a live ranking stays on
+  screen and the commentary keeps that number in); Ask the AI; the commentary feed. **Studio** makes the broadcast
+  full screen (Esc to come back).
+- **Crew:** the agent team at work. Each line lights up its run through stats → tactics → narrator → persona with
+  the path each agent took (rules, LLM, fallback) and its latency; the **outage drill** kills any agent live and the
+  broadcast carries on through its fallback; the A2A agent card and endpoint; match stats; half-time and full-time
+  reports; every commentary line with the brief the narrator got, the why and the trace.
+- **Data:** the raw feed made visible. Live throughput, xG race, possession, momentum and ball-speed charts building
+  second by second, a 22-player tracking table (position, live speed, foot heights) and the event stream.
+- **Explain this moment:** click a goal or chance on the key moments timeline, in the caption or in the feed. The
+  explainer agent replays it like a TV analyst at the telestrator: the move drawn from tracking (how the ball was
+  won, the passes, the key pass and how many defenders it took out, the space at the shot), the replay freezing on
+  each beat, the analyst saying it out loud in the viewer's language.
+- **Highlights so far:** an automated highlights package of the match up to the live clock. The producer agent ranks
+  the moments, one explainer per clip runs in parallel, the producer writes the intro and outro, and the reel plays
+  narrated with clip cards and slow motion at the shot.
+- **Ask the AI:** ask anything about the match in any language ("who is tiring?", "why are they dominating?"). An
+  agent with function calling picks live-data tools (`get_match_state`, `get_player`, `get_team_stats`,
+  `get_recent_events`, `get_top_players`, `get_ball_forecast`) and answers only from what they return. The tools it
+  used are shown under each answer.
+- **Voice:** the commentary, answers and replays are spoken live by an Azure AI Speech neural voice in the viewer's
+  language (en, tr, es, fr, de, pt, ar), with more energy on goals. This also makes the match accessible to fans who
+  cannot see the screen.
+- **Broadcast director:** watches every event and frame and briefs the narrator every few seconds: play-by-play of
+  what's on screen, fun facts as they happen (longest move, fastest shot, braces, headers, weak-foot goals, saves,
+  distance milestones) and running, half-time and full-time recaps. Key moments always go first.
+- **Setup** (header): match generator and picker, analytics plugin toggles, casual or tactical commentary style.
 
 ## Architecture
 
@@ -100,7 +92,7 @@ flowchart TB
     A4 --> WS["WebSocket feed"]
     ASK --> WS
     Plugins --> WS
-    WS --> UI["React UI<br/>2D / 3D / DATA, kick-off,<br/>player focus, Ask the AI"]
+    WS --> UI["React UI<br/>Watch / Crew / Data, Studio,<br/>player focus, Ask the AI"]
     UI -- "/api/tts" --> TTS["Azure AI Speech<br/>neural voices, 7 languages"]
 ```
 
