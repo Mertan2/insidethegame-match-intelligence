@@ -137,7 +137,7 @@ a production graphics path.
 
 - Live demo: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 - Code (public): https://github.com/Mertan2/insidethegame-match-intelligence
-- Video (under 2:00): **[paste the YouTube URL after uploading demo/demo-draft.mp4]**
+- Video (under 2:00): **[paste the YouTube URL after uploading demo/demo-trailer.mp4]**
 
 ## How to try it (testing instructions)
 
