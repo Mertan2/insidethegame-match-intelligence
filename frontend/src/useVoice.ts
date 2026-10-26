@@ -115,9 +115,15 @@ export function useVoice(enabled: boolean) {
     }, 50);
   }, []);
 
+  /** Let the current sentence finish, but say nothing more (the match is paused). */
+  const drain = useCallback(() => {
+    generation.current += 1;
+    queue.current = [];
+  }, []);
+
   useEffect(() => {
     if (!enabled) stop();
   }, [enabled, stop]);
 
-  return { speak, speaking, stop };
+  return { speak, speaking, stop, drain };
 }

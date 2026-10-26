@@ -7,6 +7,7 @@ import { Controls } from "./components/Controls";
 import { DataView } from "./components/DataView";
 import { Kickoff } from "./components/Kickoff";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
+import { MetricFocus } from "./components/MetricFocus";
 import { MomentsBar } from "./components/MomentsBar";
 import { OverlayLayer } from "./components/OverlayLayer";
 import { Pitch2D } from "./components/Pitch2D";
@@ -73,7 +74,7 @@ export default function App() {
   }, [matchId]);
 
   // Live commentary stays quiet while a replay is on.
-  const { speak, speaking, stop: stopVoice } = useVoice(voiceOn && program === null);
+  const { speak, speaking, stop: stopVoice, drain: drainVoice } = useVoice(voiceOn && program === null);
   const latestNarration = state.narrations[0];
   const latestAnswer = state.answers[0];
   // Speak each new AI commentary line and each answer as it arrives.
@@ -138,8 +139,11 @@ export default function App() {
   };
 
   const control = (msg: { action?: string; t?: number; speed?: number }) => {
-    if (msg.action === "seek") clearNarrations();
-    if (msg.action === "seek" || msg.action === "pause") stopVoice(); // paused means quiet, too
+    if (msg.action === "seek") {
+      clearNarrations();
+      stopVoice(); // the play has jumped: cut the line
+    }
+    if (msg.action === "pause") drainVoice(); // finish the sentence, then quiet
     send({ type: "control", ...msg });
   };
 
@@ -344,6 +348,7 @@ export default function App() {
         )}
         <aside>
           <AskPanel answers={state.answers} asking={state.asking} onAsk={ask} persona={persona} model={model} />
+          {persona.focus_metric && <MetricFocus meta={meta} metric={persona.focus_metric} plugins={state.plugins} favoritePlayer={persona.favorite_player} />}
           {persona.favorite_player && (
             <PlayerFocus meta={meta} playerId={persona.favorite_player} plugins={state.plugins} narrations={state.narrations} />
           )}

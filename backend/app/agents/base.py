@@ -19,6 +19,27 @@ class Persona(BaseModel):
     language: str = "en"
     favorite_team: Literal["home", "away"] | None = None
     favorite_player: str | None = None
+    # The one performance metric this viewer cares about; commentary and the UI keep it in view.
+    focus_metric: Literal["distance", "sprints", "top_speed", "passing", "shots", "pressure"] | None = None
+
+
+METRICS = {
+    "distance": ("distance_m", "distance covered", "m"),
+    "sprints": ("sprint_m", "sprint distance", "m"),
+    "top_speed": ("top_speed_kmh", "top speed", "km/h"),
+    "passing": ("passes_completed", "completed passes", ""),
+    "shots": ("xg", "expected goals", "xG"),
+    "pressure": ("pressures", "pressures applied", ""),
+}
+
+
+def metric_leaders(snapshots: dict, metric: str, n: int = 3) -> list[dict]:
+    """Top players for a focus metric from the stats snapshot, as the agents and the UI see them."""
+    key, _, _ = METRICS[metric]
+    rows = (snapshots.get("stats") or {}).get("players", [])
+    rows = [r for r in rows if r.get(key) is not None]
+    return [{"player_id": r["player_id"], "name": r["name"], "team": r["team"], "value": r[key]}
+            for r in sorted(rows, key=lambda r: r[key], reverse=True)[:n]]
 
 
 @dataclass

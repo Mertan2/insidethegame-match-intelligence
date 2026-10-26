@@ -11,6 +11,8 @@ SYSTEM = (
     "and translate it into the target language. Keep every number unchanged. Return only the text. "
     "Casual mode: at most two short sentences, plain words. Analyst mode: at most three short sentences "
     "(about 45 words), the commentary line first, then the key reason with at most two numbers. "
+    "If the persona has focus_metric and the text mentions viewer_metric facts, keep that one metric in: it is "
+    "what this viewer tuned in for. "
     "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
@@ -29,11 +31,18 @@ class PersonaAgent(Agent):
         elif p.favorite_team and m.get("team") == p.favorite_team:
             prefix = "Good news for your team: " if m.get("kind") != "goal" else ""
         why = (bb.why or {}).get("text", "")
+        f = m.get("facts") or {}
+        metric = ""
+        if p.focus_metric and f.get("viewer_metric"):
+            if f.get("viewer_metric_this_player") and m.get("player"):
+                metric = f" {m['player']}: {f['viewer_metric_this_player']} {f['viewer_metric']} so far."
+            elif f.get("viewer_metric_leaders"):
+                metric = f" {f['viewer_metric'].capitalize()} leaders: {f['viewer_metric_leaders']}."
         if p.mode == "casual":
             text = f"{prefix}{bb.line or m.get('headline', '')}"
             if why:
                 text += " " + why.split(". ")[0].rstrip(".") + "."
-            return text, []
+            return text + metric, []
         facts = [f"{k.replace('_', ' ')}: {v}" for k, v in (m.get("facts") or {}).items()]
         # Analysts get the reason too, kept short because it is read out live: whole sentences up to ~30 words.
         reason = ""
@@ -41,7 +50,7 @@ class PersonaAgent(Agent):
             if reason and len((reason + " " + sentence).split()) > 30:
                 break
             reason = f"{reason} {sentence}." if reason else f"{sentence}."
-        return f"{prefix}{bb.line or m.get('headline', '')} {reason}".strip(), facts
+        return f"{prefix}{bb.line or m.get('headline', '')} {reason}".strip() + metric, facts
 
     def _output(self, bb: Blackboard, text: str, facts: list[str], translated: bool) -> None:
         m = bb.moment or {}

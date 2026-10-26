@@ -66,7 +66,18 @@ export interface Persona {
   language: string;
   favorite_team: Side | null;
   favorite_player: string | null;
+  focus_metric?: FocusMetric | null;
 }
+
+export type FocusMetric = "distance" | "sprints" | "top_speed" | "passing" | "shots" | "pressure";
+export const FOCUS_METRICS: { id: FocusMetric; label: string; key: string; unit: string }[] = [
+  { id: "distance", label: "Distance covered", key: "distance_m", unit: "m" },
+  { id: "sprints", label: "Sprint distance", key: "sprint_m", unit: "m" },
+  { id: "top_speed", label: "Top speed", key: "top_speed_kmh", unit: "km/h" },
+  { id: "passing", label: "Completed passes", key: "passes_completed", unit: "" },
+  { id: "shots", label: "Expected goals", key: "xg", unit: "xG" },
+  { id: "pressure", label: "Pressures applied", key: "pressures", unit: "" },
+];
 
 export interface TeamStats {
   passes: number;
@@ -89,6 +100,7 @@ export interface PlayerStats {
   name: string;
   team: Side;
   distance_m: number;
+  sprint_m: number;
   top_speed_kmh: number;
   passes: number;
   passes_completed: number;
@@ -98,6 +110,7 @@ export interface PlayerStats {
   left_foot: number;
   right_foot: number;
   headers: number;
+  pressures: number;
   fatigue_pct: number | null;
   weak_foot_pct: number;
   weak_foot_success_pct: number | null;

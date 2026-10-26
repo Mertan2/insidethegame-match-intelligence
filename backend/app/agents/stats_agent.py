@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .base import Agent, Blackboard
+from .base import METRICS, Agent, Blackboard, metric_leaders
 
 THRESHOLD = {"casual": 0.55, "analyst": 0.4}
 
@@ -63,6 +63,16 @@ class StatsAgent(Agent):
                 team_possession_pct=team.get("possession_pct"),
                 team_pass_accuracy_pct=team.get("pass_accuracy_pct"),
             )
+        if persona.focus_metric:
+            key, label, unit = METRICS[persona.focus_metric]
+            leaders = metric_leaders(bb.snapshots, persona.focus_metric)
+            if leaders:
+                facts["viewer_metric"] = label
+                facts["viewer_metric_leaders"] = ", ".join(f"{r['name']} {r['value']}{(' ' + unit) if unit else ''}" for r in leaders)
+                if ins.player_id:
+                    mine = next((r for r in (bb.snapshots.get("stats") or {}).get("players", []) if r["player_id"] == ins.player_id), None)
+                    if mine and mine.get(key) is not None:
+                        facts["viewer_metric_this_player"] = f"{mine[key]}{(' ' + unit) if unit else ''}"
         bb.moment = {
             "kind": ins.kind,
             "headline": ins.headline,

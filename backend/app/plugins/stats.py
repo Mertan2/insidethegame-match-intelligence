@@ -45,7 +45,7 @@ class StatsPlugin(Plugin):
         self.players: dict[str, dict[str, float]] = defaultdict(
             lambda: {
                 "distance_m": 0.0, "sprint_m": 0.0, "top_speed_kmh": 0.0, "passes": 0, "passes_completed": 0, "shots": 0, "xg": 0.0,
-                "left_foot": 0, "right_foot": 0, "head": 0, "weak_foot": 0, "weak_foot_completed": 0,
+                "left_foot": 0, "right_foot": 0, "head": 0, "weak_foot": 0, "weak_foot_completed": 0, "pressures": 0,
             }
         )
         self._prev_pos: dict[str, np.ndarray] = {}
@@ -143,6 +143,8 @@ class StatsPlugin(Plugin):
             team["tackles_won"] += bool(d.get("success"))
         elif event.type == "pressure":
             team["pressures"] += 1
+            if event.player_id:
+                self.players[event.player_id]["pressures"] += 1
         elif event.type == "possession_change" and d.get("cause") == "interception":
             team["interceptions"] += 1
         return out
@@ -233,6 +235,7 @@ class StatsPlugin(Plugin):
                 "left_foot": p["left_foot"],
                 "right_foot": p["right_foot"],
                 "headers": p["head"],
+                "pressures": p["pressures"],
                 "fatigue_pct": self._rounded_fatigue(pid, state),
                 "weak_foot_pct": round(100 * p["weak_foot"] / (p["left_foot"] + p["right_foot"]), 1)
                 if p["left_foot"] + p["right_foot"]

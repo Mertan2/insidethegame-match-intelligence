@@ -1,4 +1,4 @@
-import type { MatchMeta, Persona, Side } from "../types";
+import { FOCUS_METRICS, type FocusMetric, type MatchMeta, type Persona, type Side } from "../types";
 
 const LANGUAGES = [
   ["en", "English"],
@@ -62,6 +62,14 @@ export function Controls({ meta, persona, onPersona, paused, speed, t, onControl
           <option value="">No favourite club</option>
           <option value="home">{meta.teams.home.name}</option>
           <option value="away">{meta.teams.away.name}</option>
+        </select>
+        <select value={persona.focus_metric ?? ""} onChange={(e) => onPersona({ focus_metric: (e.target.value || null) as FocusMetric | null })} title="The one metric you care about: it stays on screen and in the commentary">
+          <option value="">Metric I care about…</option>
+          {FOCUS_METRICS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.label}
+            </option>
+          ))}
         </select>
         <select value={persona.favorite_player ?? ""} onChange={(e) => onPersona({ favorite_player: e.target.value || null })}>
           <option value="">Follow a player…</option>

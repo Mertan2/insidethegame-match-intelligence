@@ -59,3 +59,19 @@ def test_goal_facts_state_score_and_effect(match):
     out = asyncio.run(orch.narrate(435.0, {"home": 1, "away": 1}, [goal], {}, Persona(mode="analyst")))
     facts = " ".join(out["facts"])
     assert "equaliser" in facts and "1-1" in facts
+
+
+def test_focus_metric_keeps_the_viewers_number_in_the_line(match):
+    """A viewer who tuned in for one metric hears it: the scorer's value, or the leaders when no player is involved."""
+    from app.pipeline import LivePipeline
+
+    pipeline = LivePipeline(match)
+    for frame in match.frames[:1200]:
+        pipeline.process(frame)
+    snapshots = pipeline.snapshots()
+    orch = Orchestrator(match.meta)
+    out = asyncio.run(orch.narrate(120.0, {"home": 0, "away": 0}, [_insight(match)], snapshots, Persona(focus_metric="distance")))
+    assert "distance covered so far" in out["text"]
+    team_only = _insight(match, player_id=None, kind="momentum_swing")
+    out = asyncio.run(orch.narrate(120.0, {"home": 0, "away": 0}, [team_only], snapshots, Persona(mode="analyst", focus_metric="top_speed")))
+    assert "Top speed leaders:" in out["text"] and "km/h" in out["text"]
