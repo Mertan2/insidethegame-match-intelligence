@@ -75,3 +75,16 @@ def test_focus_metric_keeps_the_viewers_number_in_the_line(match):
     team_only = _insight(match, player_id=None, kind="momentum_swing")
     out = asyncio.run(orch.narrate(120.0, {"home": 0, "away": 0}, [team_only], snapshots, Persona(mode="analyst", focus_metric="top_speed")))
     assert "Top speed leaders:" in out["text"] and "km/h" in out["text"]
+
+
+def test_outage_drill_fails_the_named_agent_and_the_line_still_goes_out(match):
+    orch = Orchestrator(match.meta)
+    orch.outage = {"tactics"}
+    out = asyncio.run(orch.narrate(600.0, {"home": 0, "away": 0}, [_insight(match)], {}, Persona(mode="analyst")))
+    assert out is not None and out["text"]
+    steps = {s["agent"]: s for s in out["trace"] if "path" in s}
+    assert steps["tactics"]["status"] == "fallback:OutageDrill" and steps["tactics"]["path"] == "template"
+    assert steps["narrator"]["status"] == "ok" and steps["persona"]["status"] == "ok"
+    orch.outage = set()
+    out = asyncio.run(orch.narrate(620.0, {"home": 0, "away": 0}, [_insight(match, t=620.0)], {}, Persona(mode="analyst")))
+    assert all(s["status"] == "ok" for s in out["trace"] if "path" in s)

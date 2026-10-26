@@ -26,6 +26,8 @@ export interface LiveState {
   playerKmh: Record<string, number>;
   answers: Answer[];
   asking: boolean;
+  /** Agents taken down in the outage drill (the broadcast must carry on through their fallbacks). */
+  drill: string[];
 }
 
 const INITIAL: LiveState = {
@@ -46,6 +48,7 @@ const INITIAL: LiveState = {
   playerKmh: {},
   answers: [],
   asking: false,
+  drill: [],
 };
 
 /**
@@ -131,6 +134,9 @@ export function useLiveMatch(matchId: string | null, initialPersona: Persona, in
           break;
         case "control_ack":
           update({ paused: data.paused, speed: data.speed });
+          break;
+        case "drill_ack":
+          update({ drill: data.agents });
           break;
         case "end":
           update({ ended: true });

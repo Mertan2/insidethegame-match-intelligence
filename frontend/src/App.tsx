@@ -15,6 +15,7 @@ import { PlayerFocus } from "./components/PlayerFocus";
 import { RecapPanel } from "./components/RecapPanel";
 import { ReplayTheater } from "./components/ReplayTheater";
 import { StatsPanel } from "./components/StatsPanel";
+import { Studio } from "./components/Studio";
 import { AUDIENCES, loadAudience, saveAudience, type Audience, type View } from "./audience";
 import type { Moment, Persona, Program, ReplayItem, TraceStep } from "./types";
 import { useLiveMatch } from "./useLiveMatch";
@@ -29,6 +30,7 @@ export default function App() {
   const [audience, setAudienceState] = useState<Audience>(START_AUDIENCE);
   const [view, setView] = useState<View>(AUDIENCES[START_AUDIENCE].view);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [studio, setStudio] = useState(false);
   const [model, setModel] = useState<string | null>(null);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const [voiceOn, setVoiceOn] = useState(false);
@@ -207,6 +209,9 @@ export default function App() {
               {voiceOn ? (speaking ? "🔊 Speaking…" : "🔊 Voice on") : "🔇 Voice off"}
             </button>
           )}
+          <button className="studio-btn" onClick={() => setStudio(true)} title="Full-screen broadcast output: pitch, graphics cues and the commentary as captions">
+            📺 Studio
+          </button>
           <button className={`setup-btn ${setupOpen ? "on" : ""}`} onClick={() => setSetupOpen((o) => !o)} aria-expanded={setupOpen}>
             ⚙ Setup
           </button>
@@ -305,6 +310,29 @@ export default function App() {
       {program && (
         <ReplayTheater meta={meta} program={program} voice={voiceAvailable && voiceOn} language={persona.language} onClose={closeReplay} />
       )}
+      {studio && kickedOff && (
+        <Studio
+          meta={meta}
+          frame={frame}
+          plugins={state.plugins}
+          narrations={state.narrations}
+          persona={persona}
+          moments={moments}
+          paused={state.paused}
+          ended={state.ended}
+          speed={state.speed}
+          speaking={speaking !== null}
+          voiceOn={voiceOn}
+          voiceAvailable={voiceAvailable}
+          drill={state.drill}
+          busy={busy}
+          onControl={control}
+          onVoice={() => setVoiceOn((v) => !v)}
+          onExplain={explainMoment}
+          onHighlights={highlightsSoFar}
+          onExit={() => setStudio(false)}
+        />
+      )}
 
       <main>
         {view === "data" && cfg.views.includes("data") && (
@@ -358,7 +386,15 @@ export default function App() {
         <section className={`bottom bottom-${audience}`}>
           <StatsPanel meta={meta} plugins={state.plugins} persona={persona} />
           {audience !== "fan" && <RecapPanel matchId={meta.match_id} persona={persona} />}
-          {audience !== "fan" && <AgentOps agents={state.agents} narrations={state.narrations} answers={state.answers} />}
+          {audience !== "fan" && (
+            <AgentOps
+              agents={state.agents}
+              narrations={state.narrations}
+              answers={state.answers}
+              drill={state.drill}
+              onDrill={(agents) => send({ type: "drill", agents })}
+            />
+          )}
         </section>
       </main>
     </div>

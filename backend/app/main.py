@@ -363,7 +363,8 @@ async def live(
         # Replays are deterministic, so the same moment for the same persona reads the same for every
         # viewer: reuse the line (and, through the speech cache, its audio) instead of regenerating it.
         key = (match_id, round(insights[0].t, 1), insights[0].kind, insights[0].headline, p.model_dump_json())
-        out = _narration_cache.get(key)
+        # During an outage drill every line must run through the (failing) agents, not come from the cache.
+        out = None if orchestrator.outage else _narration_cache.get(key)
         cached = out is not None
         if out is None:
             out = await orchestrator.narrate(t, score, insights, snapshots, p)
@@ -396,6 +397,11 @@ async def live(
             elif kind == "persona":
                 persona = Persona(**{**persona.model_dump(), **msg.get("persona", {})})
                 await send({"type": "persona_ack", "persona": persona.model_dump()})
+            elif kind == "drill":
+                # Outage drill: fail the named agents on purpose; the broadcast must carry on through fallbacks.
+                names = {a.name for a in orchestrator.chain}
+                orchestrator.outage = {str(a) for a in msg.get("agents", []) if str(a) in names}
+                await send({"type": "drill_ack", "agents": sorted(orchestrator.outage)})
             elif kind == "ask":
                 question = str(msg.get("question", "")).strip()[:300]
                 if question and not ratelimit.allow(ratelimit.client_ip(ws), "ask"):

@@ -32,11 +32,17 @@ MIN_GAP_S = 8.0  # game seconds between narrations unless the moment is huge
 BLACKBOARD = "blackboard"  # workflow shared-state key
 
 
+class OutageDrill(Exception):
+    """Raised in place of an agent's run when that agent is taken down in an outage drill."""
+
+
 async def run_step(agent: Agent, bb: Blackboard, timeout: float | None = None) -> None:
     """Run one agent with a timeout and template fallback, appending its trace entry (and a tracing span)."""
     started = time.perf_counter()
     with telemetry.span(f"agent.{agent.name}", **{"agent.name": agent.name, "moment.kind": (bb.moment or {}).get("kind")}) as sp:
         try:
+            if agent.name in getattr(bb, "drill", ()):  # the explainer's board has no drill
+                raise OutageDrill(agent.name)
             path = await asyncio.wait_for(agent.run(bb), timeout=timeout or AGENT_TIMEOUT_S)
             status = "ok"
         except Exception as exc:  # noqa: BLE001 - includes TimeoutError
@@ -91,6 +97,8 @@ class Orchestrator:
         self.team_names = {s: t.name for s, t in meta.teams.items()}
         self._last_t = -1e9
         self.history: list[dict[str, Any]] = []
+        # Outage drill: agents in this set are failed on purpose so the fallback path can be shown live.
+        self.outage: set[str] = set()
 
     AGENT_CLASSES = (StatsAgent, TacticsAgent, NarratorAgent, PersonaAgent, RecapAgent, AskAgent)
 
@@ -119,6 +127,7 @@ class Orchestrator:
             persona=persona,
             insights=insights,
             snapshots=snapshots,
+            drill=set(self.outage),
         )
         # A workflow instance runs one request at a time; narrations can overlap, so build one per run.
         with telemetry.span("narration", **{"insight.kind": insights[0].kind if insights else None,

@@ -34,8 +34,18 @@ function pathLabel(path: string): string {
  * The multi-agent team at work, live: the last narration's run through the agent chain (path taken and
  * latency per agent), running totals per agent, and the tools the Ask agent called for the last question.
  */
-export function AgentOps({ agents, narrations, answers }: { agents: AgentInfo[]; narrations: Narration[]; answers: Answer[] }) {
+interface Props {
+  agents: AgentInfo[];
+  narrations: Narration[];
+  answers: Answer[];
+  /** Agents currently taken down in the outage drill, and the control to change that. */
+  drill?: string[];
+  onDrill?: (agents: string[]) => void;
+}
+
+export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: Props) {
   const latest = narrations[0];
+  const toggleDrill = (name: string) => onDrill?.(drill.includes(name) ? drill.filter((a) => a !== name) : [...drill, name]);
   const last = latest ? steps(latest) : [];
   const total = last.reduce((sum, s) => sum + s.ms, 0);
 
@@ -80,11 +90,11 @@ export function AgentOps({ agents, narrations, answers }: { agents: AgentInfo[];
                 <div key={name} className="ops-step-wrap">
                   {i > 0 && <span className="ops-arrow">→</span>}
                   <div
-                    className={`ops-step path-${s?.path ?? "none"} ${s && s.status !== "ok" ? "fallback" : ""}`}
+                    className={`ops-step path-${s?.path ?? "none"} ${s && s.status !== "ok" ? "fallback" : ""} ${drill.includes(name) ? "down" : ""}`}
                     style={{ animationDelay: `${i * 0.18}s` }}
                     title={`${roles[name] ?? ""}${s ? ` · ${s.status}` : ""}`}
                   >
-                    <b>{name}</b>
+                    <b>{drill.includes(name) ? "⚡ " : ""}{name}</b>
                     <span>{s ? pathLabel(s.path) : "–"}</span>
                     <span className="ops-ms">{s && s.path !== "skipped" ? `${Math.round(s.ms)} ms` : ""}</span>
                   </div>
@@ -138,6 +148,29 @@ export function AgentOps({ agents, narrations, answers }: { agents: AgentInfo[];
       <div className="ops-ask muted">
         <b>recap</b> writes the half-time and full-time report on demand
       </div>
+
+      {onDrill && (
+        <div className={`ops-drill ${drill.length ? "active" : ""}`}>
+          <div className="ops-drill-head">
+            <b>Outage drill</b>
+            <span className="muted">take an agent down live; the broadcast must carry on</span>
+          </div>
+          <div className="ops-drill-buttons">
+            {CHAIN.map((name) => (
+              <button key={name} className={drill.includes(name) ? "down" : ""} onClick={() => toggleDrill(name)} title={`Fail the ${name} agent on purpose`}>
+                {drill.includes(name) ? `⚡ ${name} down` : `kill ${name}`}
+              </button>
+            ))}
+            {drill.length > 0 && <button onClick={() => onDrill([])}>restore all</button>}
+          </div>
+          {drill.length > 0 && (
+            <p className="ops-drill-note">
+              {drill.join(" and ")} {drill.length === 1 ? "is" : "are"} failing every call. Each line still goes out: the chain routes
+              around {drill.length === 1 ? "it" : "them"} on the deterministic template, and the trace records the fallback.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

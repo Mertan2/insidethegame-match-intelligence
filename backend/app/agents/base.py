@@ -58,6 +58,8 @@ class Blackboard:
     line: str | None = None  # NarratorAgent
     output: dict[str, Any] | None = None  # PersonaAgent
     trace: list[dict[str, Any]] = field(default_factory=list)
+    # Agents taken down on purpose (an outage drill): their model path fails and the fallback runs.
+    drill: set[str] = field(default_factory=set)
 
     @property
     def clock(self) -> str:
