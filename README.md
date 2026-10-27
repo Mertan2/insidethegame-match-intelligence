@@ -13,6 +13,8 @@ each viewer, so a fan can follow the match by ear in their own language.
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 
+![Every fan's call: the same goal for the scoring side's fan in English, the rival fan in Turkish and an analyst in Spanish, three agent chains in parallel](docs/img/fancall.jpg)
+
 ![Studio mode: the broadcast output, with the score bug, graphics cues, the commentary as a lower third and the agent strip](docs/img/studio.jpg)
 
 | Explain this moment: telestrated replay, analyst voice | AI highlights: producer + explainers in parallel |
@@ -21,13 +23,19 @@ each viewer, so a fan can follow the match by ear in their own language.
 | ![Watch: the broadcast with the viewer's rail](docs/img/live-broadcaster.jpg) | ![Crew: the agent team, outage drill, A2A](docs/img/crew.jpg) |
 
 **60-second judge path** (live demo, sound on): pick **Broadcaster** and a language, press **Kick off**. A goal
-lands on the key moments timeline within a minute at 4x: press **Replay & explain** in the caption. Open **Crew**
+lands on the key moments timeline within a minute at 4x: press **Every fan's call** in the caption to hear the same
+goal for three different fans, then **Replay & explain**. Open **Crew**
 and press **kill tactics**: commentary keeps arriving, and each line's trace shows tactics on `template` while
 stats, narrator and persona stay on their paths. Press **Highlights so far**: the producer agent ranks the moments,
 runs one explainer per clip in parallel, and writes the intro and outro over what they return. Every handoff is on
-screen. CI runs 57 tests, the frontend build, a Docker build and a container smoke test on every push.
+screen. CI runs 58 tests, the frontend build, a Docker build and a container smoke test on every push.
 
 What to try:
+- **Every fan's call:** on any goal, press it in the caption. The same moment is written for three viewers at once:
+  the scoring side's fan in English, the other side's fan in Turkish (who does not celebrate it), and a neutral
+  analyst in Spanish. Each is a full stats → tactics → narrator → persona chain, the three run in parallel from the
+  same facts, each card shows its own trace, and with voice on the three calls are read out in turn. This is the
+  product in one screen: one data feed, a personal commentator for every fan.
 - **Watch:** the broadcast, personalised for you. The pitch with live graphics cues, the score bug, the commentary
   as a lower-third caption with a **Replay & explain** button on every goal and chance, and a strip showing which
   agent wrote the line and by which path. The rail is *you*: Fan, Broadcaster or Analyst; language; your club; your

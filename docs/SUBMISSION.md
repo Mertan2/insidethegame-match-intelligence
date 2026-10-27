@@ -64,6 +64,11 @@ clock.
    player), a metric-focus mode (the one number you care about, live and in the commentary), 7 languages, spoken by
    neural voices.
 
+**Every fan's call.** On any goal, one click shows the same moment written for three viewers at once: the scoring
+side's fan in English, the other side's fan in Turkish (who does not celebrate it) and a neutral analyst in Spanish.
+Each is a full agent chain, the three run in parallel from the same facts, each card carries its own trace, and the
+three calls are read out in turn. It is the pitch in one screen: one feed, a personal commentator for every fan.
+
 **Brief coverage, item by item.**
 - **(ii) Real-time match intelligence.** *Player identification:* live name tags on the pitch, triggered when a
   player passes a sprint threshold (25 km/h, with the speed) or a distance threshold (each kilometre covered).
@@ -135,7 +140,7 @@ clock.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (57 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (58 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
@@ -159,7 +164,8 @@ metrics possible.
 
 1. Open the live demo, pick **Fan**, **Broadcaster** or **Analyst** and a language, press **Kick off** (sound on;
    browsers only allow audio after that click).
-2. **Watch** is the broadcast: when a goal or chance lands, press **Replay & explain** in the caption (or the marker
+2. **Watch** is the broadcast: when a goal lands, press **Every fan's call** in the caption to hear it for three
+   different fans, then **Replay & explain** (or the marker
    on the key moments timeline): the explainer agent replays the move with telestration and talks you through it.
 3. Press **Highlights so far** (or **Match highlights** at full time): a narrated package cut by the producer and
    explainer agents.
