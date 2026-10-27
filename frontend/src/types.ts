@@ -187,6 +187,8 @@ export interface Narration {
   requested_language: string;
   mode: string;
   trace: { agent: string; path?: string; status?: string; ms?: number; llm_error?: string }[];
+  /** The fact-checker agent's verdict: every number in `text` checked against the stats agent's facts. */
+  check?: { numbers: number; flagged: string[]; grounded: boolean };
 }
 
 export interface OverlayCue {

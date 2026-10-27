@@ -1,6 +1,6 @@
 """Orchestrates the agents as a Microsoft Agent Framework workflow over shared state.
 
-stats -> tactics -> narrator -> persona. Each agent is its own Agent Framework executor in a
+stats -> tactics -> narrator -> persona -> checker. Each agent is its own Agent Framework executor in a
 sequential `Workflow`; they coordinate through the blackboard kept in workflow shared state
 (each step reads it, writes its own slot, and hands off a signal to the next executor). Each
 step has a timeout; on timeout or error the agent's deterministic template runs instead, and
@@ -19,6 +19,7 @@ from .. import telemetry
 from ..models import MatchMeta
 from ..plugins import Insight
 from .ask_agent import AskAgent
+from .checker_agent import CheckerAgent
 from .base import Agent, Blackboard, Persona
 from .llm import LLMClient, NullLLM
 from .narrator_agent import NarratorAgent
@@ -91,7 +92,7 @@ class Orchestrator:
     def __init__(self, meta: MatchMeta, llm: LLMClient | None = None):
         self.meta = meta
         self.llm = llm or NullLLM()
-        self.chain: list[Agent] = [StatsAgent(self.llm), TacticsAgent(self.llm), NarratorAgent(self.llm), PersonaAgent(self.llm)]
+        self.chain: list[Agent] = [StatsAgent(self.llm), TacticsAgent(self.llm), NarratorAgent(self.llm), PersonaAgent(self.llm), CheckerAgent(self.llm)]
         self.recap_agent = RecapAgent(self.llm)
         self.players = {p.id: p for p in meta.players}
         self.team_names = {s: t.name for s, t in meta.teams.items()}
@@ -100,7 +101,7 @@ class Orchestrator:
         # Outage drill: agents in this set are failed on purpose so the fallback path can be shown live.
         self.outage: set[str] = set()
 
-    AGENT_CLASSES = (StatsAgent, TacticsAgent, NarratorAgent, PersonaAgent, RecapAgent, AskAgent)
+    AGENT_CLASSES = (StatsAgent, TacticsAgent, NarratorAgent, PersonaAgent, CheckerAgent, RecapAgent, AskAgent)
 
     @classmethod
     def describe_agents(cls) -> list[dict[str, str]]:

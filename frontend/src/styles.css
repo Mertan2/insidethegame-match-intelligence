@@ -713,3 +713,12 @@ button:hover:not(:disabled) { border-color: #3a4457; }
 .fancall-play { margin-left: auto; border-radius: 50%; width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .fancall-note { font-size: 13px; text-align: center; }
 @media (max-width: 900px) { .fancall-cards { grid-template-columns: 1fr; } .fancall { padding: 14px; } }
+
+/* Fact-checker */
+.check-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 6px; margin: 2px 0 4px; border: 1px solid; }
+.check-chip.ok { color: #9ee6a8; border-color: rgba(120, 220, 140, 0.45); background: rgba(120, 220, 140, 0.08); }
+.check-chip.warn { color: #ffb4a2; border-color: rgba(255, 120, 100, 0.5); background: rgba(255, 120, 100, 0.1); }
+.ops-check { font-size: 12px; margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: rgba(120, 220, 140, 0.06); border: 1px solid rgba(120, 220, 140, 0.3); }
+.ops-check b { color: #9ee6a8; }
+.ops-check.warn { background: rgba(255, 120, 100, 0.08); border-color: rgba(255, 120, 100, 0.4); }
+.ops-check.warn b { color: #ffb4a2; }

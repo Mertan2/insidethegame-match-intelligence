@@ -8,7 +8,7 @@ export interface FanCallData {
   viewers: (Narration & { label: string; persona: Persona })[];
 }
 
-const CHAIN = ["stats", "tactics", "narrator", "persona"];
+const CHAIN = ["stats", "tactics", "narrator", "persona", "checker"];
 
 interface Props {
   meta: MatchMeta;
@@ -131,7 +131,11 @@ export function FanCall({ meta, data, voice, onClose }: Props) {
                     return (
                       <span key={name} className={`studio-agent path-${s?.path ?? "none"} ${s && s.status !== "ok" ? "fallback" : ""}`}>
                         {name}
-                        {s && <small>{s.path === "llm" ? "LLM" : s.path === "deterministic" ? "rules" : s.path}</small>}
+                        {s && (
+                          <small>
+                            {name === "checker" && v.check ? (v.check.grounded ? "✓ facts" : `${v.check.flagged.length} flagged`) : s.path === "llm" ? "LLM" : s.path === "deterministic" ? "rules" : s.path}
+                          </small>
+                        )}
                       </span>
                     );
                   })}

@@ -24,7 +24,8 @@ def test_narration_template_path(match):
     assert out is not None
     assert match.meta.players[9].name in out["text"]
     assert any("xG 0.42" in f for f in out["why"])
-    assert [s["agent"] for s in out["trace"]] == ["stats", "tactics", "narrator", "persona"]
+    assert [s["agent"] for s in out["trace"]] == ["stats", "tactics", "narrator", "persona", "checker"]
+    assert out["check"]["grounded"]
 
 
 def test_low_importance_is_skipped_for_casual(match):

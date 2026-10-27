@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { AgentInfo, Answer, Narration } from "../types";
 import { Icon } from "./Icon";
 
-const CHAIN = ["stats", "tactics", "narrator", "persona"];
+const CHAIN = ["stats", "tactics", "narrator", "persona", "checker"];
 
 interface Step {
   agent: string;
@@ -66,6 +66,9 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
   }, [narrations]);
 
   const fallbacks = Object.values(totals).reduce((sum, t) => sum + t.fallbacks, 0);
+  const checked = narrations.filter((n) => n.check);
+  const grounded = checked.filter((n) => n.check?.grounded).length;
+  const numbers = checked.reduce((sum, n) => sum + (n.check?.numbers ?? 0), 0);
   const lastAnswer = answers[0];
   const roles = Object.fromEntries(agents.map((a) => [a.name, a.role]));
 
@@ -96,7 +99,15 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
                     title={`${roles[name] ?? ""}${s ? ` · ${s.status}` : ""}`}
                   >
                     <b>{drill.includes(name) && <Icon name="bolt" size={12} />}{name}</b>
-                    <span>{s ? pathLabel(s.path) : "–"}</span>
+                    <span>
+                      {name === "checker" && latest.check
+                        ? latest.check.grounded
+                          ? `✓ ${latest.check.numbers} checked`
+                          : `${latest.check.flagged.length} flagged`
+                        : s
+                          ? pathLabel(s.path)
+                          : "–"}
+                    </span>
                     <span className="ops-ms">{s && s.path !== "skipped" ? `${Math.round(s.ms)} ms` : ""}</span>
                   </div>
                 </div>
@@ -148,6 +159,16 @@ export function AgentOps({ agents, narrations, answers, drill = [], onDrill }: P
       </div>
       <div className="ops-ask muted">
         <b>recap</b> writes the half-time and full-time report on demand
+      </div>
+      <div className={`ops-check ${checked.length && grounded < checked.length ? "warn" : ""}`}>
+        <b>Fact-check</b>{" "}
+        {checked.length ? (
+          <>
+            {grounded} of {checked.length} lines fully grounded · {numbers} numbers checked against the stats agent's facts
+          </>
+        ) : (
+          <span className="muted">every number on air is checked against the stats agent's facts</span>
+        )}
       </div>
 
       {onDrill && (

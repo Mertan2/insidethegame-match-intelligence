@@ -100,7 +100,7 @@ three calls are read out in turn. It is the pitch in one screen: one feed, a per
 - **Distinct roles.** A deterministic *broadcast director* watches every event and frame and writes briefs
   (play-by-play, fun facts, recaps). The *stats agent* picks the moment and the grounded facts. The *tactics agent*
   explains why it matters. The *narrator agent* writes the line. The *persona agent* adapts tone, focus and language
-  to the viewer. The *recap agent* writes match reports. The *ask agent* answers viewer questions with function
+  to the viewer. The *fact-checker agent* checks every number on air against the stats agent's facts. The *recap agent* writes match reports. The *ask agent* answers viewer questions with function
   calling over six live-data tools. The *explainer agent* breaks a moment into spoken beats tied to the replay's
   freeze-frames. The *producer agent* cuts the highlights package.
 - **A2A.** The match analyst is published as an A2A agent (agent card plus JSON-RPC endpoint, via Agent
@@ -112,8 +112,13 @@ three calls are read out in turn. It is the pitch in one screen: one feed, a per
   coordinate through a blackboard in workflow shared state, each writing its own slot and handing off to the next. A
   commentary scheduler decides what is said when: key moments jump the queue, routine briefs are paced for a voice
   to read, stale play is never described.
-- **Grounding.** Numbers come only from the deterministic stats layer; language-model agents phrase, explain and
-  translate, and are told the score and what each goal did ("equaliser", "takes the lead") so they cannot invent it.
+- **Grounding, verified on every line.** Numbers come only from the deterministic stats layer; language-model agents
+  phrase, explain and translate, and are told the score and what each goal did ("equaliser", "takes the lead") so
+  they cannot invent it. A deterministic **fact-checker agent** runs last in the chain: it pulls every number out of
+  the line on air (any language, Arabic-Indic digits, decimal commas, km for metres, rounding) and checks it against
+  the stats agent's facts, the score and the clock. Each line carries its verdict ("8 numbers fact-checked" or the
+  unverified numbers), and the Crew screen shows the grounding rate live. In an audit run of 64 model-written lines
+  (English, Spanish and Turkish; casual and analyst), all 64 were fully grounded.
 - **Recovering from failure, shown live.** Every agent runs with a timeout and a deterministic template fallback;
   each narration carries a trace of which agent ran, by which path and how long it took (shown live in the Agent
   team panel and in analyst mode), so one failing model call never silences the broadcast. The **outage drill**
@@ -140,7 +145,7 @@ three calls are read out in turn. It is the pitch in one screen: one feed, a per
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (58 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (61 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own

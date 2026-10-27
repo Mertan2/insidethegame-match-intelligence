@@ -47,6 +47,14 @@ export function CommentaryFeed({ meta, narrations, persona, model, moments = [],
             )}
           </div>
           <p>{n.text}</p>
+          {n.check && n.check.numbers > 0 && (
+            <span
+              className={`check-chip ${n.check.grounded ? "ok" : "warn"}`}
+              title="The fact-checker agent compared every number in this line with the stats agent's facts"
+            >
+              {n.check.grounded ? `✓ ${n.check.numbers} number${n.check.numbers === 1 ? "" : "s"} fact-checked` : `unverified: ${n.check.flagged.join(", ")}`}
+            </span>
+          )}
           {onExplain && momentFor(n, moments) && (
             <button className="explain-btn" onClick={() => onExplain(momentFor(n, moments)!)}>
               <Icon name="play" size={12} /> Replay & explain

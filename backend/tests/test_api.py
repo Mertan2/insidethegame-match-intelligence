@@ -79,5 +79,5 @@ def test_every_fans_call_narrates_one_moment_for_three_viewers(client):
     assert scorer["persona"]["favorite_team"] == goal["team"]
     assert rival["persona"]["favorite_team"] != goal["team"] and rival["persona"]["language"] == "tr"
     assert analyst["persona"]["mode"] == "analyst"
-    assert all([s["agent"] for s in v["trace"] if "path" in s] == ["stats", "tactics", "narrator", "persona"] for v in out["viewers"])
+    assert all([s["agent"] for s in v["trace"] if "path" in s] == ["stats", "tactics", "narrator", "persona", "checker"] for v in out["viewers"])
     assert rival["text"].startswith("Not what you wanted to see.")

@@ -4,7 +4,7 @@ import { Icon } from "./Icon";
 import { OverlayLayer } from "./OverlayLayer";
 import { Pitch2D } from "./Pitch2D";
 
-const CHAIN = ["stats", "tactics", "narrator", "persona"];
+const CHAIN = ["stats", "tactics", "narrator", "persona", "checker"];
 
 const KICKER: Record<string, string> = {
   goal: "GOAL",
@@ -131,7 +131,19 @@ export function Broadcast({ meta, frame, plugins, narrations, persona, moments, 
                 <span className={`studio-agent path-${s?.path ?? "none"} ${s && s.status !== "ok" ? "fallback" : ""} ${down ? "down" : ""}`}>
                   {down && <Icon name="bolt" size={11} />}
                   {name}
-                  {s && s.path !== "skipped" && <small>{s.path === "llm" ? "LLM" : s.path === "deterministic" ? "rules" : s.path}</small>}
+                  {s && s.path !== "skipped" && (
+                    <small>
+                      {name === "checker" && latest?.check
+                        ? latest.check.grounded
+                          ? "✓ facts"
+                          : `${latest.check.flagged.length} flagged`
+                        : s.path === "llm"
+                          ? "LLM"
+                          : s.path === "deterministic"
+                            ? "rules"
+                            : s.path}
+                    </small>
+                  )}
                 </span>
               </span>
             );

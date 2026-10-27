@@ -28,12 +28,12 @@ goal for three different fans, then **Replay & explain**. Open **Crew**
 and press **kill tactics**: commentary keeps arriving, and each line's trace shows tactics on `template` while
 stats, narrator and persona stay on their paths. Press **Highlights so far**: the producer agent ranks the moments,
 runs one explainer per clip in parallel, and writes the intro and outro over what they return. Every handoff is on
-screen. CI runs 58 tests, the frontend build, a Docker build and a container smoke test on every push.
+screen. CI runs 61 tests, the frontend build, a Docker build and a container smoke test on every push.
 
 What to try:
 - **Every fan's call:** on any goal, press it in the caption. The same moment is written for three viewers at once:
   the scoring side's fan in English, the other side's fan in Turkish (who does not celebrate it), and a neutral
-  analyst in Spanish. Each is a full stats → tactics → narrator → persona chain, the three run in parallel from the
+  analyst in Spanish. Each is a full stats → tactics → narrator → persona → checker chain, the three run in parallel from the
   same facts, each card shows its own trace, and with voice on the three calls are read out in turn. This is the
   product in one screen: one data feed, a personal commentator for every fan.
 - **Watch:** the broadcast, personalised for you. The pitch with live graphics cues, the score bug, the commentary
@@ -42,7 +42,7 @@ What to try:
   player (the camera, stats and commentary follow them); the one metric you care about (a live ranking stays on
   screen and the commentary keeps that number in); Ask the AI; the commentary feed. **Studio** makes the broadcast
   full screen (Esc to come back).
-- **Crew:** the agent team at work. Each line lights up its run through stats → tactics → narrator → persona with
+- **Crew:** the agent team at work. Each line lights up its run through stats → tactics → narrator → persona → checker with
   the path each agent took (rules, LLM, fallback) and its latency; the **outage drill** kills any agent live and the
   broadcast carries on through its fallback; the A2A agent card and endpoint; match stats; half-time and full-time
   reports; every commentary line with the brief the narrator got, the why and the trace.
@@ -87,12 +87,13 @@ flowchart TB
     Plugins -- insights --> SCHED["Commentary scheduler<br/>key moments first,<br/>paced for voice"]
     subgraph Agents["Explain + personalise: Microsoft Agent Framework"]
         direction LR
-        A1["Stats agent<br/>(deterministic facts)"] --> A2["Tactics agent<br/>why it matters"] --> A3["Narrator agent<br/>the line"] --> A4["Persona agent<br/>mode, favourites, language"]
+        A1["Stats agent<br/>(deterministic facts)"] --> A2["Tactics agent<br/>why it matters"] --> A3["Narrator agent<br/>the line"] --> A4["Persona agent<br/>mode, favourites, language"] --> A5["Fact-checker agent<br/>every number vs the facts"]
         BB[("Blackboard<br/>workflow shared state")]
         A1 -.-> BB
         A2 -.-> BB
         A3 -.-> BB
         A4 -.-> BB
+        A5 -.-> BB
     end
     SCHED --> A1
     ASK["Ask agent<br/>function calling over<br/>6 live-data tools"]
@@ -104,7 +105,7 @@ flowchart TB
     AOAI["Azure OpenAI<br/>gpt-4.1-mini"]
     A2 & A3 & A4 & ASK & RECAP & EXP --> AOAI
     REPLAY --> KM
-    A4 --> WS["WebSocket feed"]
+    A5 --> WS["WebSocket feed"]
     ASK --> WS
     Plugins --> WS
     WS --> UI["React UI<br/>Watch / Crew / Data, Studio,<br/>player focus, Ask the AI"]

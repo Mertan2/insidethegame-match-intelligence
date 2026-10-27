@@ -52,7 +52,8 @@ def _narrate(orch, match, persona):
 
 def test_each_llm_agent_is_an_agent_framework_agent(match):
     orch = Orchestrator(match.meta, llm=FakeLLM())
-    stats, *llm_agents = orch.chain
+    stats, *llm_agents, checker = orch.chain
+    assert checker.agent is None  # the fact-checker is deterministic too
     assert stats.agent is None  # stays deterministic so numbers are grounded
     for a in [*llm_agents, orch.recap_agent]:
         assert isinstance(a.agent, AFAgent) and a.agent.name == a.name
@@ -63,7 +64,7 @@ def test_llm_path_in_trace_and_translation(match):
     out = _narrate(Orchestrator(match.meta, llm=llm), match, Persona(mode="analyst", language="es"))
     assert out is not None
     trace = {s["agent"]: s for s in out["trace"]}
-    assert list(trace) == ["stats", "tactics", "narrator", "persona"]
+    assert list(trace) == ["stats", "tactics", "narrator", "persona", "checker"]
     assert trace["stats"]["path"] == "deterministic"
     assert all(trace[a]["path"] == "llm" and trace[a]["status"] == "ok" for a in ("tactics", "narrator", "persona"))
     assert out["text"] == "¡Qué ocasión!"
@@ -90,7 +91,7 @@ def test_timeout_falls_back_to_template(match, monkeypatch):
     monkeypatch.setattr(orch_mod, "AGENT_TIMEOUT_S", 0.05)
     out = _narrate(Orchestrator(match.meta, llm=FakeLLM(delay=0.5)), match, Persona(language="tr"))
     assert out is not None and match.meta.players[9].name in out["text"]
-    steps = [s for s in out["trace"] if "path" in s and s["agent"] != "stats"]
+    steps = [s for s in out["trace"] if "path" in s and s["agent"] not in ("stats", "checker")]
     assert all(s["path"] == "template" and s["status"] == "fallback:TimeoutError" for s in steps)
     assert out["language"] == "en" and out["requested_language"] == "tr"  # honest about missing translation
 
