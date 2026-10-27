@@ -675,3 +675,15 @@ button:hover:not(:disabled) { border-color: #3a4457; }
 .poss div { color: var(--accent-ink); }
 .regime.chaos { color: #ff8a65; }
 .regime.control { color: #7ad3ff; }
+
+@media (max-width: 640px) {
+  .studio-bug { font-size: 13px; top: 6px; white-space: nowrap; }
+  .studio-bug-team, .studio-bug-score, .studio-bug-clock { padding: 3px 8px; }
+  .studio-bug .live-dot, .studio-pitch .cue-side_panel, .studio-agents { display: none; }
+  .studio-lower { grid-template-columns: 1fr; }
+  .bc .studio-caption { min-height: 0; padding: 8px 12px; }
+  .bc .studio-caption p { font-size: 14px; }
+  .studio-follow { font-size: 12px; top: 6px; right: 6px; }
+  .transport { gap: 8px; }
+  .transport-play { min-width: 0; }
+}

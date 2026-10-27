@@ -8,7 +8,7 @@ millions of personal broadcasts, explained by a team of AI agents on Microsoft A
 Hackathon project for **Microsoft + Premier League "Inside the Game"**. It turns synthetic football data into
 live, explainable match intelligence: stats derived from raw tracking, a Studio-mode broadcast output, telestrated
 replays that explain every goal, a 3D ball-flight forecast, and a multi-agent narrator that writes and speaks for
-each viewer, which also makes the match accessible to fans who cannot see the screen.
+each viewer, so a fan can follow the match by ear in their own language.
 
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
@@ -19,6 +19,13 @@ each viewer, which also makes the match accessible to fans who cannot see the sc
 |---|---|
 | ![Explain this moment](docs/img/explain-3.jpg) | ![Highlights reel clip](docs/img/reel-clip.jpg) |
 | ![Watch: the broadcast with the viewer's rail](docs/img/live-broadcaster.jpg) | ![Crew: the agent team, outage drill, A2A](docs/img/crew.jpg) |
+
+**60-second judge path** (live demo, sound on): pick **Broadcaster** and a language, press **Kick off**. A goal
+lands on the key moments timeline within a minute at 4x: press **Replay & explain** in the caption. Open **Crew**
+and press **kill tactics**: commentary keeps arriving, and each line's trace shows tactics on `template` while
+stats, narrator and persona stay on their paths. Press **Highlights so far**: the producer agent ranks the moments,
+runs one explainer per clip in parallel, and writes the intro and outro over what they return. Every handoff is on
+screen. CI runs 57 tests, the frontend build, a Docker build and a container smoke test on every push.
 
 What to try:
 - **Watch:** the broadcast, personalised for you. The pitch with live graphics cues, the score bug, the commentary
@@ -46,7 +53,7 @@ What to try:
   used are shown under each answer.
 - **Voice:** the commentary, answers and replays are spoken live by an Azure AI Speech neural voice in the viewer's
   language (en, tr, es, fr, de, pt, ar), with more energy on goals. This also makes the match accessible to fans who
-  cannot see the screen.
+  listen without the screen.
 - **Broadcast director:** watches every event and frame and briefs the narrator every few seconds: play-by-play of
   what's on screen, fun facts as they happen (longest move, fastest shot, braces, headers, weak-foot goals, saves,
   distance milestones) and running, half-time and full-time recaps. Key moments always go first.
@@ -237,7 +244,15 @@ The match analyst is also an **A2A (Agent2Agent)** agent, so a broadcaster's own
 directly. Discover it from its card and send it a message over JSON-RPC:
 
 - Card: `GET /.well-known/agent-card.json` (skills: `ask`, `explain`, `highlights`)
-- Endpoint: `POST /a2a`
+- Endpoint: `POST /a2a` (A2A protocol 1.0: send the `A2A-Version: 1.0` header)
+
+One call from a shell:
+
+```bash
+curl -s -X POST https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io/a2a \
+  -H "Content-Type: application/json" -H "A2A-Version: 1.0" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"SendMessage","params":{"message":{"role":"ROLE_USER","messageId":"m1","parts":[{"text":"who is tiring?"}]}}}'
+```
 
 ```python
 import asyncio, httpx
@@ -280,7 +295,7 @@ Client → server:
 - **Fan-out / fan-in:** a highlights package runs one explainer per clip in parallel (`asyncio.gather`), then the
   producer writes the intro and outro over their headlines.
 - **Forecast honesty:** tracking doesn't expose spin, but the generator applies Magnus curl, so forecasts are
-  scored against reality (mean position error 1 s ahead, about 0.15–0.2 m now).
+  scored against reality (mean position error 1 s ahead, about 0.1–0.2 m on the demo match).
 - **Generator simplifications:** no offside, fouls or cards; teams don't swap ends at half time. Action is
   about 4x denser than a real match (shots, goals) to keep demos lively; about half of shots are on target.
 

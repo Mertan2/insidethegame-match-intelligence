@@ -19,7 +19,7 @@ Every fan gets their own commentator: their club, their player, their language, 
 A football broadcast is made once, for everyone, in one language. Live match data says *what* happened; fans,
 studios and broadcasters want *why* it matters, instantly, each in their own way. Inside the Game makes one data
 feed into a personal broadcast for every viewer: their club, their player, the one number they care about, their
-language, spoken out loud, which also makes the match accessible to fans who cannot see the screen. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
+language, spoken out loud, so a fan can follow the match by ear. Inside the Game turns synthetic, football-realistic tracking and events into explainable match
 intelligence: deeper stats, a 3D ball-flight forecast that calls shots on target before they arrive, and a team of
 specialised AI agents on Microsoft Agent Framework that commentates the whole match live, out loud, in the viewer's
 language. Click any goal or chance and an explainer agent replays it like a TV analyst at the telestrator: the
@@ -117,8 +117,13 @@ clock.
 - **Observable in production.** Every narration, agent step (path, fallback, latency), Ask question, tool call and
   voice request is an OpenTelemetry span in Azure Application Insights, with the Azure OpenAI and Speech calls
   underneath as dependencies, so you can see which agent is slow or falling back on the live deployment.
-- **End-to-end outcome.** From raw tracking to spoken, personalised, explained commentary for the whole match, which
-  no single agent could produce live and grounded at the same time.
+- **Why it takes a team, not one agent.** A single model call would have to compute the statistics (and would
+  invent them), fit a voice-paced time budget, personalise for every viewer in seven languages, and stay up when
+  the model times out. Splitting the work gives each concern an owner: the deterministic stats agent is the only
+  source of numbers, tactics adds the why, the narrator fits the line to the voice budget, persona adapts it per
+  viewer, and the explainer and producer work from the same facts for replays and highlights. Any one agent can
+  fail without silencing the broadcast, and the trace on every line shows which did what. The outcome is spoken,
+  personalised, explained commentary for the whole match from raw tracking, live.
 
 **Microsoft and Azure technology.**
 - **Microsoft Agent Framework:** agents, the live narration workflow, and the A2A server (`A2AExecutor`).
@@ -130,16 +135,15 @@ clock.
 - **Azure Monitor Application Insights:** OpenTelemetry traces of the agent workflow, tools and voice.
 - **Production readiness:** per-client rate limits on paid endpoints, cross-viewer caching of commentary and
   replays, background cache warm-up after a restart, secrets in Container Apps, CI on every push.
-- **GitHub:** public repository with GitHub Actions CI (56 tests, frontend build, Docker build and container smoke
+- **GitHub:** public repository with GitHub Actions CI (57 tests, frontend build, Docker build and container smoke
   test).
 
 **Why it matters.** One engine serves a studio analyst, a streaming overlay and a casual fan, each in their own
 language and style, from a single data feed: commentary that scales to every viewer instead of one broadcast for
-all. Spoken output makes the match accessible to blind and low-vision fans and to fans who do not speak the
-broadcast language. The overlay timeline, Studio mode and WebSocket protocol are built to plug into a production
+all. Spoken output lets a fan follow by ear, in a language the broadcast does not offer. The overlay timeline, Studio mode and WebSocket protocol are built to plug into a production
 graphics path, and the A2A endpoint lets a broadcaster's own agents use the analyst as a service.
 
-**Data innovation.** Most entries read the organiser's event file. We wrote a football-realistic generator: 22
+**Data innovation.** The data is our own. We wrote a football-realistic generator: 22
 players and the ball in 3D at 10 Hz, left and right foot positions from a gait model, preferred and weak feet,
 headers and crosses, fatigue that slows sprints, and the full event stream, for any seed and length. The tracking
 is what makes the explainer's telestration, the ball-flight forecast and the auto-computed speed and distance
