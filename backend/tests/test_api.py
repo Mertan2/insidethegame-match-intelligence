@@ -65,3 +65,19 @@ def test_explain_depth_short_has_fewer_beats(client):
     assert 0 < len(short["beats"]) <= len(quick["beats"]) <= len(full["beats"])
     assert short["verdict"] == "" and quick["verdict"]
     assert client.get(f"/api/matches/{match_id}/moments/{moment['id']}/explain?depth=huge").status_code == 422
+
+
+def test_every_fans_call_narrates_one_moment_for_three_viewers(client):
+    match_id = client.get("/api/matches").json()[0]["match_id"]
+    goals = [m for m in client.get(f"/api/matches/{match_id}/moments").json() if m["kind"] == "goal"]
+    if not goals:
+        return
+    goal = goals[0]
+    out = client.get(f"/api/matches/{match_id}/moments/{goal['id']}/viewers").json()
+    assert len(out["viewers"]) == 3
+    scorer, rival, analyst = out["viewers"]
+    assert scorer["persona"]["favorite_team"] == goal["team"]
+    assert rival["persona"]["favorite_team"] != goal["team"] and rival["persona"]["language"] == "tr"
+    assert analyst["persona"]["mode"] == "analyst"
+    assert all([s["agent"] for s in v["trace"] if "path" in s] == ["stats", "tactics", "narrator", "persona"] for v in out["viewers"])
+    assert rival["text"].startswith("Not what you wanted to see.")

@@ -273,6 +273,70 @@ async def highlights_reel(request: Request, match_id: str, upto: float | None = 
     return await _reel(_match(match_id), upto, Persona(mode=mode, language=lang))
 
 
+# ----------------------------------------------------------------------------- Every fan's call
+_viewers_cache: dict[tuple, dict] = {}
+_state_cache: dict[tuple, tuple] = {}
+CALL_KINDS = ("goal", "big_chance", "rocket_shot", "forecast_on_target")
+
+
+def _state_at(match: Match, t: float) -> tuple[list, dict, dict]:
+    """Run the plugins up to just after `t`: the insights around it, the stats as they stood, the score."""
+    key = (match.meta.match_id, round(t, 1))
+    if key not in _state_cache:
+        pipeline = LivePipeline(match)
+        insights, score = [], {"home": 0, "away": 0}
+        for frame in match.frames:
+            if frame.t > t + 1.5:
+                break
+            insights.extend(pipeline.process(frame).insights)
+            score = dict(frame.score)
+        _state_cache[key] = ([i for i in insights if abs(i.t - t) < 3], pipeline.snapshots(), score)
+    return _state_cache[key]
+
+
+def viewer_personas(moment: dict, meta) -> list[tuple[str, Persona]]:
+    """Three viewers of the same moment: the scoring side's fan, the other side's fan, a neutral analyst."""
+    side = moment["team"]
+    other = "away" if side == "home" else "home"
+    return [
+        (f"{meta.teams[side].name} fan · English", Persona(mode="casual", language="en", favorite_team=side)),
+        (f"{meta.teams[other].name} fan · Türkçe", Persona(mode="casual", language="tr", favorite_team=other)),
+        ("Analyst · Español", Persona(mode="analyst", language="es")),
+    ]
+
+
+@app.get("/api/matches/{match_id}/moments/{moment_id}/viewers")
+async def every_fans_call(request: Request, match_id: str, moment_id: str) -> dict:
+    """The same moment narrated for three different viewers at once: one agent chain per viewer, in parallel."""
+    ratelimit.check(request, "ai")
+    match = _match(match_id)
+    moment = next((m for m in _moments(match) if m["id"] == moment_id), None)
+    if moment is None:
+        raise HTTPException(404, f"Unknown moment {moment_id}")
+    key = (match_id, moment_id)
+    if key in _viewers_cache:
+        return _viewers_cache[key]
+    near, snapshots, score = await asyncio.to_thread(_state_at, match, moment["t"])
+    wanted = "goal" if moment["kind"] == "goal" else None
+    pool = [i for i in near if i.kind == wanted] if wanted else [i for i in near if i.kind in CALL_KINDS]
+    if not pool:
+        raise HTTPException(404, "No call for this moment")
+    insight = max(pool, key=lambda i: i.importance)
+    viewers = viewer_personas(moment, match.meta)
+    started = asyncio.get_running_loop().time()
+    with telemetry.span("every_fans_call", **{"moment.id": moment_id, "viewers": len(viewers)}):
+        outs = await asyncio.gather(*(Orchestrator(match.meta, llm).narrate(insight.t, score, [insight], snapshots, p)
+                                      for _, p in viewers))
+    result = {
+        "moment": moment,
+        "ms": round((asyncio.get_running_loop().time() - started) * 1000),
+        "viewers": [{"label": label, "persona": p.model_dump(), **(o or {})} for (label, p), o in zip(viewers, outs)],
+    }
+    if all(o and clean(o.get("trace", [])) for o in outs):
+        _viewers_cache[key] = result
+    return result
+
+
 # ----------------------------------------------------------------------------- A2A
 def _demo_match() -> Match:
     return _match(_store().list()[0]["match_id"])

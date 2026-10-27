@@ -31,6 +31,7 @@ export interface BroadcastProps {
   busy: string | null;
   view: "2d" | "3d";
   onExplain: (m: Moment) => void;
+  onFanCall?: (m: Moment) => void;
 }
 
 /** The key moment a commentary line is about (a goal or chance a few seconds earlier), if any. */
@@ -44,7 +45,7 @@ function momentFor(n: Narration | undefined, moments: Moment[]): Moment | undefi
  * lower-third caption, and a strip showing which agent wrote the line and by which path.
  * Used in the Watch screen and, full screen, in Studio mode.
  */
-export function Broadcast({ meta, frame, plugins, narrations, persona, moments, paused, ended, drill, busy, view, onExplain }: BroadcastProps) {
+export function Broadcast({ meta, frame, plugins, narrations, persona, moments, paused, ended, drill, busy, view, onExplain, onFanCall }: BroadcastProps) {
   const latest = narrations[0];
   // The last key moment stays explainable for a while, even once the caption has moved on.
   const recent = narrations.slice(0, 8).map((n) => momentFor(n, moments)).find((m) => m && (frame?.t ?? 0) - m.t < 90);
@@ -101,9 +102,16 @@ export function Broadcast({ meta, frame, plugins, narrations, persona, moments, 
                 <span className="studio-clock">{latest.clock}</span>
                 {team && <span className="studio-team">{team.name}</span>}
                 {moment && (
-                  <button className="explain-btn studio-explain" onClick={() => onExplain(moment)} disabled={busy !== null}>
-                    <Icon name="play" size={12} /> Replay & explain {moment.minute}' {moment.kind}
-                  </button>
+                  <span className="caption-actions">
+                    {onFanCall && moment.kind === "goal" && (
+                      <button className="explain-btn fancall-btn" onClick={() => onFanCall(moment)} disabled={busy !== null}>
+                        <Icon name="voice" size={12} /> Every fan's call
+                      </button>
+                    )}
+                    <button className="explain-btn studio-explain" onClick={() => onExplain(moment)} disabled={busy !== null}>
+                      <Icon name="play" size={12} /> Replay & explain {moment.minute}' {moment.kind}
+                    </button>
+                  </span>
                 )}
               </div>
               <p>{latest.text}</p>

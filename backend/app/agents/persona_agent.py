@@ -13,6 +13,9 @@ SYSTEM = (
     "(about 45 words), the commentary line first, then the key reason with at most two numbers. "
     "If the persona has focus_metric and the text mentions viewer_metric facts, keep that one metric in: it is "
     "what this viewer tuned in for. "
+    "If supports is set, you are that club's own commentator: delight when they score or create. When "
+    "this_moment_is_by is the other club, rewrite the line from your club's side: no praise words for the other "
+    "side (no great, brilliant, superb, harika), say what it means for your club and what they need now. "
     "Units: distances are metres (never yards), speeds km/h, xG 0-1."
 )
 
@@ -29,7 +32,9 @@ class PersonaAgent(Agent):
         if p.favorite_player and m.get("player_id") == p.favorite_player:
             prefix = "Your player! "
         elif p.favorite_team and m.get("team") == p.favorite_team:
-            prefix = "Good news for your team: " if m.get("kind") != "goal" else ""
+            prefix = "Good news for your team: " if m.get("kind") != "goal" else "Yes! "
+        elif p.favorite_team and m.get("team") in ("home", "away") and m.get("kind") == "goal":
+            prefix = "Not what you wanted to see. "
         why = (bb.why or {}).get("text", "")
         f = m.get("facts") or {}
         metric = ""
@@ -81,7 +86,15 @@ class PersonaAgent(Agent):
         if bb.moment is None:
             return
         text, facts = self._compose(bb)
-        if bb.persona.language != "en" or bb.persona.mode == "casual":
-            prompt = json.dumps({"persona": bb.persona.model_dump(), "language": bb.persona.language, "text": text})
+        if bb.persona.language != "en" or bb.persona.mode == "casual" or bb.persona.favorite_team:
+            m = bb.moment or {}
+            fav = bb.persona.favorite_team
+            prompt = json.dumps({
+                "persona": bb.persona.model_dump(),
+                "language": bb.persona.language,
+                "supports": bb.team_names.get(fav) if fav else None,
+                "this_moment_is_by": bb.team_names.get(m.get("team")) if m.get("team") in bb.team_names else None,
+                "text": text,
+            })
             text = await self.ask(prompt, max_tokens=160)
         self._output(bb, text, facts, translated=True)

@@ -4,6 +4,7 @@ import { AskPanel } from "./components/AskPanel";
 import { Broadcast } from "./components/Broadcast";
 import { CommentaryFeed } from "./components/CommentaryFeed";
 import { DataView } from "./components/DataView";
+import { FanCall, type FanCallData } from "./components/FanCall";
 import { BrandMark, Icon } from "./components/Icon";
 import { Kickoff } from "./components/Kickoff";
 import { MatchPicker, type MatchSummary } from "./components/MatchPicker";
@@ -70,6 +71,7 @@ export default function App() {
 
   const [moments, setMoments] = useState<Moment[]>([]);
   const [program, setProgram] = useState<Program | null>(null);
+  const [fanCall, setFanCall] = useState<FanCallData | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [ftDismissed, setFtDismissed] = useState(false);
   const resumeAfterReplay = useRef(false);
@@ -89,7 +91,7 @@ export default function App() {
   }, [matchId]);
 
   // Live commentary stays quiet while a replay is on.
-  const { speak, speaking, stop: stopVoice, drain: drainVoice } = useVoice(voiceOn && program === null);
+  const { speak, speaking, stop: stopVoice, drain: drainVoice } = useVoice(voiceOn && program === null && fanCall === null);
   const latestNarration = state.narrations[0];
   const latestAnswer = state.answers[0];
   // Speak each new AI commentary line and each answer as it arrives.
@@ -134,6 +136,27 @@ export default function App() {
       `/api/matches/${matchId}/highlights?${query}${state.ended ? "" : `&upto=${state.frame?.t ?? 0}`}`,
       (r: { intro: string; outro: string; items: ReplayItem[]; trace: TraceStep[]; language: string }) => ({ kind: "reel", ...r }),
     );
+  const openFanCall = async (m: Moment) => {
+    setBusy("Three agent teams are writing the same moment for three fans…");
+    resumeAfterReplay.current = (!state.paused || justResumed.current) && !state.ended;
+    send({ type: "control", action: "pause" });
+    try {
+      const res = await fetch(`/api/matches/${matchId}/moments/${m.id}/viewers`);
+      if (!res.ok) throw new Error(String(res.status));
+      setFanCall((await res.json()) as FanCallData);
+    } catch {
+      if (resumeAfterReplay.current) send({ type: "control", action: "play" });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const closeFanCall = () => {
+    setFanCall(null);
+    if (resumeAfterReplay.current) {
+      send({ type: "control", action: "play" });
+      justResumed.current = true;
+    }
+  };
   const closeReplay = () => {
     setProgram(null);
     if (resumeAfterReplay.current) {
@@ -183,6 +206,7 @@ export default function App() {
     busy,
     view,
     onExplain: explainMoment,
+    onFanCall: openFanCall,
   };
 
   const transport = (
@@ -351,6 +375,7 @@ export default function App() {
       {program && (
         <ReplayTheater meta={meta} program={program} voice={voiceAvailable && voiceOn} language={persona.language} onClose={closeReplay} />
       )}
+      {fanCall && <FanCall meta={meta} data={fanCall} voice={voiceAvailable && voiceOn} onClose={closeFanCall} />}
       {studio && kickedOff && (
         <Studio
           {...broadcastProps}
