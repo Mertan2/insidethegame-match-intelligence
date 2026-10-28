@@ -10,6 +10,8 @@ live, explainable match intelligence: stats derived from raw tracking, a Studio-
 replays that explain every goal, a 3D ball-flight forecast, and a multi-agent narrator that writes and speaks for
 each viewer, so a fan can follow the match by ear in their own language.
 
+**Demo video (1:52):** https://youtu.be/XQ6XZBrkd_0
+
 **Live demo:** https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 (Azure Container Apps + `gpt-4.1-mini` on Azure OpenAI. Try Analyst mode, Türkçe, or "Follow a player".)
 

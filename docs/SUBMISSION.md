@@ -163,7 +163,7 @@ metrics possible.
 
 - Live demo: https://insidethegame.delightfulforest-cce043aa.swedencentral.azurecontainerapps.io
 - Code (public): https://github.com/Mertan2/insidethegame-match-intelligence
-- Video (under 2:00): **[paste the YouTube URL after uploading demo/demo-trailer.mp4]**
+- Video (1:52): https://youtu.be/XQ6XZBrkd_0
 
 ## How to try it (testing instructions)
 
@@ -187,6 +187,6 @@ No login is needed.
 
 - [x] Live app deployed on Azure Container Apps with the model and speech connected
 - [x] Public GitHub repository
-- [ ] Video uploaded to YouTube as **Public** (the rules ask for a public URL; Unlisted is not public) and its URL pasted above
+- [x] Video uploaded to YouTube as **Public** (the rules ask for a public URL; Unlisted is not public) and its URL pasted above
 - [ ] Project created on Innovation Studio with the text above, category chosen, all three links added
 - [ ] Submitted by **Oct 27, 11:59 PM PT**
